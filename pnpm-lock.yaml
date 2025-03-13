@@ -41,9 +41,6 @@ importers:
       tailwind-merge:
         specifier: ^3.0.2
         version: 3.0.2
-      tailwindcss-animate:
-        specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@4.0.14)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -60,6 +57,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.0.14
+      tailwindcss-animate:
+        specifier: ^1.0.7
+        version: 1.0.7(tailwindcss@4.0.14)
       typescript:
         specifier: ^5
         version: 5.8.2
