@@ -35,7 +35,7 @@ describe('Auth Actions', () => {
       
       expect(encodedRedirect).toHaveBeenCalledWith(
         'error',
-        '/sign-in',
+        '/signin',
         'Email is required'
       );
       expect(mockSupabase.auth.signInWithOtp).not.toHaveBeenCalled();
@@ -58,7 +58,7 @@ describe('Auth Actions', () => {
       
       expect(encodedRedirect).toHaveBeenCalledWith(
         'success',
-        '/sign-in',
+        '/signin',
         'Check your email for the magic link.'
       );
     });
@@ -91,7 +91,7 @@ describe('Auth Actions', () => {
       
       expect(encodedRedirect).toHaveBeenCalledWith(
         'error',
-        '/sign-in',
+        '/signin',
         'Invalid email'
       );
     });
@@ -128,7 +128,7 @@ describe('Auth Actions', () => {
       await signOut();
       
       expect(mockSupabase.auth.signOut).toHaveBeenCalled();
-      expect(redirect).toHaveBeenCalledWith('/sign-in');
+      expect(redirect).toHaveBeenCalledWith('/signin');
     });
   });
 });

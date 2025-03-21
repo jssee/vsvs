@@ -30,6 +30,14 @@ vi.mock('$/utils/supabase/server', () => ({
       getSession: vi.fn(),
       getUser: vi.fn(),
     },
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    single: vi.fn(),
   })),
 }));
 

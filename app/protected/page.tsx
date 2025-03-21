@@ -1,6 +1,7 @@
 import { getUser, signOut } from "$/actions/auth";
 import { redirect } from "next/navigation";
 import { Button } from "$/components/ui/button";
+import Link from "next/link";
 
 export default async function ProtectedPage() {
   const user = await getUser();
@@ -36,12 +37,18 @@ export default async function ProtectedPage() {
               </p>
             </div>
           </div>
-
-          <form action={signOut}>
-            <Button type="submit" className="w-full">
-              Sign Out
-            </Button>
-          </form>
+          
+          <div className="flex flex-col gap-3">
+            <Link href="/protected/clubs">
+              <Button className="w-full">My Clubs</Button>
+            </Link>
+            
+            <form action={signOut}>
+              <Button type="submit" className="w-full" variant="outline">
+                Sign Out
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
