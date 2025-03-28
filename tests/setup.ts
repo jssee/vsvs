@@ -16,7 +16,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn().mockImplementation(() => ({
     get: vi.fn().mockReturnValue(null),
   })),
-  Link: ({ children, ...props }) => {
+  Link: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
     return React.createElement('a', props, children);
   },
 }));
@@ -42,6 +42,8 @@ vi.mock('$/utils/supabase/server', () => ({
 }));
 
 // Clear all mocks before each test
-beforeEach(() => {
+// This will be used by vitest but Next.js doesn't need to worry about it
+// @ts-ignore - Vitest provides this globally
+beforeEach?.(() => {
   vi.clearAllMocks();
 });

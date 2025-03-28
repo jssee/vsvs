@@ -9,7 +9,7 @@ import SessionsList from "./sessions-list";
 export default async function GauntletDetailPage({
   params,
 }: {
-  params: { id: string; gauntletId: string };
+  params: Promise<{ id: string; gauntletId: string }>;
 }) {
   // Await the params object before accessing its properties
   const { id, gauntletId } = await params;

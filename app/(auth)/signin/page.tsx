@@ -7,8 +7,9 @@ import Link from "next/link";
 import { Button } from "$/components/ui/button";
 import { Input } from "$/components/ui/input";
 import { Separator } from "$/components/ui/separator";
+import { Suspense } from "react";
 
-export default function SignIn() {
+function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -84,5 +85,13 @@ export default function SignIn() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   );
 }

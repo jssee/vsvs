@@ -9,7 +9,7 @@ import { Separator } from "$/components/ui/separator";
 export default async function NewGauntletPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   // Await the params object before accessing its properties
   const { id } = await params;

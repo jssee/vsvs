@@ -6,13 +6,13 @@ import { notFound } from "next/navigation";
 export default async function EditGauntletPage({
   params,
 }: {
-  params: { id: string; gauntletId: string };
+  params: Promise<{ id: string; gauntletId: string }>;
 }) {
-  // Await the params object before accessing its properties
+  // Directly access the params object properties
   const { id, gauntletId } = await params;
   const clubId = parseInt(id);
   const gId = parseInt(gauntletId);
-  
+
   if (isNaN(clubId) || isNaN(gId)) {
     notFound();
   }
@@ -34,9 +34,12 @@ export default async function EditGauntletPage({
 
       <div className="max-w-2xl w-full bg-white border rounded-lg p-8">
         <div className="text-center py-8">
-          <h2 className="text-xl font-medium mb-4">Gauntlet Editing Coming Soon</h2>
+          <h2 className="text-xl font-medium mb-4">
+            Gauntlet Editing Coming Soon
+          </h2>
           <p className="text-gray-500 mb-6">
-            This feature is still in development. You'll be able to edit gauntlet settings in the future.
+            This feature is still in development. You'll be able to edit
+            gauntlet settings in the future.
           </p>
           <Link href={`/protected/clubs/${clubId}/gauntlets/${gauntlet.id}`}>
             <Button>Back to Gauntlet</Button>
@@ -46,3 +49,4 @@ export default async function EditGauntletPage({
     </div>
   );
 }
+

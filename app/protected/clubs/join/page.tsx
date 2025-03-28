@@ -5,9 +5,9 @@ import { Button } from "$/components/ui/button";
 import { Input } from "$/components/ui/input";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-export default function JoinClubPage() {
+function JoinClubForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("code");
@@ -88,5 +88,13 @@ export default function JoinClubPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function JoinClubPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <JoinClubForm />
+    </Suspense>
   );
 }
