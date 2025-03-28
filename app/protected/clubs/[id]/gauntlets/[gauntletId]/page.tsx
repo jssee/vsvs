@@ -1,8 +1,10 @@
 import { getGauntletById } from "$/actions/gauntlet";
+import { getGauntletSessions } from "$/actions/session";
 import { Button } from "$/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import GauntletActions from "./gauntlet-actions";
+import SessionsList from "./sessions-list";
 
 export default async function GauntletDetailPage({
   params,
@@ -19,6 +21,7 @@ export default async function GauntletDetailPage({
   }
 
   const { gauntlet, isOwner, error } = await getGauntletById(gId);
+  const { sessions, error: sessionsError } = await getGauntletSessions(gId);
 
   if (error || !gauntlet) {
     notFound();
@@ -76,24 +79,17 @@ export default async function GauntletDetailPage({
           </div>
 
           <div className="bg-white border rounded-lg p-6">
-            <h2 className="text-lg font-semibold mb-3">Sessions</h2>
-            {(gauntlet.session_count && gauntlet.session_count > 0) ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <p>
-                    {gauntlet.current_session || 0} of {gauntlet.session_count} sessions completed
-                  </p>
-                  {isOwner && gauntlet.status === 'active' && (
-                    <Link href={`/protected/clubs/${clubId}/gauntlets/${gauntlet.id}/sessions/new`}>
-                      <Button size="sm">Add Session</Button>
-                    </Link>
-                  )}
-                </div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Sessions</h2>
+              {isOwner && gauntlet.status === 'active' && (
+                <Link href={`/protected/clubs/${clubId}/gauntlets/${gauntlet.id}/sessions/new`}>
+                  <Button size="sm">Add Session</Button>
+                </Link>
+              )}
+            </div>
 
-                <div className="bg-gray-50 p-4 rounded-md text-center">
-                  <p className="text-gray-500">Session management will be implemented in the future</p>
-                </div>
-              </div>
+            {sessions && sessions.length > 0 ? (
+              <SessionsList sessions={sessions} clubId={clubId} gauntletId={gauntlet.id} />
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">No sessions have been created yet</p>
