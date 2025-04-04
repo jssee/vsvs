@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import SubmissionForm from "./submission-form";
 import SubmissionsList from "./submissions-list";
+import GeneratePlaylistButton from "./generate-playlist-button";
 
 export default async function SessionDetailPage({
   params,
@@ -147,6 +148,16 @@ export default async function SessionDetailPage({
                   </Button>
                 </Link>
               </div>
+            )}
+            
+            {/* Spotify Playlist Generation - only show when submissions phase is over */}
+            {(currentPhase === "voting" || currentPhase === "completed") && (
+              <GeneratePlaylistButton
+                sessionId={session.id}
+                gauntletId={gauntlet.id}
+                clubId={clubId}
+                submissionCount={submissions?.length || 0}
+              />
             )}
           </div>
         </div>

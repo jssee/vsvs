@@ -41,6 +41,7 @@ export default function SubmissionsList({
   const [isLoading, setIsLoading] = useState(false);
 
   // Helper to extract Spotify track id from URL
+  // This is a client-side function, not a server action, so we keep it synchronous
   const getSpotifyIdFromUrl = (url: string) => {
     if (!url) return "";
     
