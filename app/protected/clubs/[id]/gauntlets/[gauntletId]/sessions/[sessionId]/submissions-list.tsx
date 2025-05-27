@@ -14,9 +14,9 @@ type Profile = {
 type Submission = {
   id: number;
   track_id: string;
-  user_id: number;
+  user_id: number | null;
   created_at: string;
-  profile: Profile;
+  profile: Profile | null;
 };
 
 interface SubmissionsListProps {
@@ -84,7 +84,7 @@ export default function SubmissionsList({
   // For submission phase, only show user's own submission
   // For voting phase or completed, show all submissions
   const visibleSubmissions = currentPhase === "submission" 
-    ? submissions.filter(sub => sub.profile.id === userProfileId)
+    ? submissions.filter(sub => sub.profile?.id === userProfileId)
     : submissions;
   
   if (visibleSubmissions.length === 0 && currentPhase === "submission") {
@@ -111,7 +111,7 @@ export default function SubmissionsList({
           "";
         
         // Determine if this is the user's submission
-        const isUserSubmission = submission.profile.id === userProfileId;
+        const isUserSubmission = submission.profile?.id === userProfileId;
         
         // User can only delete their own submission during submission phase
         const canDelete = isUserSubmission && currentPhase === "submission";
@@ -121,7 +121,7 @@ export default function SubmissionsList({
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h3 className="font-medium text-sm">
-                  {submission.profile.username}
+                  {submission.profile?.username || "Anonymous"}
                   {isUserSubmission && " (You)"}
                 </h3>
                 <p className="text-xs text-gray-500">
