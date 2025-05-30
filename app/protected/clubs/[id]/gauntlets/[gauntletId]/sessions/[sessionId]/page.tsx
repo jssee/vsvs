@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import SubmissionForm from "./submission-form";
 import SubmissionsList from "./submissions-list";
+import { SpotifyIntegration } from "$/components/spotify-integration";
 
 export default async function SessionDetailPage({
   params,
@@ -118,36 +119,43 @@ export default async function SessionDetailPage({
           </div>
         </div>
 
-        <div className="bg-white border rounded-lg p-6 h-fit">
-          <h2 className="text-lg font-semibold mb-4">Session Details</h2>
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Phase:</span>
-              <span className={`px-2 py-0.5 rounded-full capitalize ${statusClass}`}>
-                {currentPhase}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Submission Deadline:</span>
-              <span className="font-medium">{formattedSubmissionDeadline}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Voting Deadline:</span>
-              <span className="font-medium">{formattedVotingDeadline}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Total Submissions:</span>
-              <span className="font-medium">{submissions?.length || 0}</span>
-            </div>
-            {isOwner && (
-              <div className="pt-4">
-                <Link href={`/protected/clubs/${clubId}/gauntlets/${gauntlet.id}/sessions/${session.id}/edit`}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Edit Session
-                  </Button>
-                </Link>
+        <div className="space-y-6">
+          <div className="bg-white border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4">Session Details</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Phase:</span>
+                <span className={`px-2 py-0.5 rounded-full capitalize ${statusClass}`}>
+                  {currentPhase}
+                </span>
               </div>
-            )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Submission Deadline:</span>
+                <span className="font-medium">{formattedSubmissionDeadline}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Voting Deadline:</span>
+                <span className="font-medium">{formattedVotingDeadline}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Total Submissions:</span>
+                <span className="font-medium">{submissions?.length || 0}</span>
+              </div>
+              {isOwner && (
+                <div className="pt-4">
+                  <Link href={`/protected/clubs/${clubId}/gauntlets/${gauntlet.id}/sessions/${session.id}/edit`}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Edit Session
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Spotify Integration */}
+          <div className="bg-white border rounded-lg p-6">
+            <SpotifyIntegration sessionId={session.id.toString()} />
           </div>
         </div>
       </div>
