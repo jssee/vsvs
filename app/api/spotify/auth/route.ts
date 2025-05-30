@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 
 export async function GET(request: NextRequest) {
   console.log('Spotify auth route called')
@@ -21,16 +22,28 @@ export async function GET(request: NextRequest) {
     'user-read-private'
   ]
   
+  // Generate cryptographically secure random state for CSRF protection
+  const state = randomBytes(32).toString('hex')
+  
   // Manually construct the Spotify OAuth URL
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     scope: scopes.join(' '),
     redirect_uri: redirectUri,
-    state: sessionId // Use sessionId as state for security
+    state: state
   })
   
   const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`
   
-  return NextResponse.redirect(authUrl)
+  // Store state->sessionId mapping in secure httpOnly cookie
+  const response = NextResponse.redirect(authUrl)
+  response.cookies.set('spotify_oauth_state', JSON.stringify({ state, sessionId }), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 10 * 60 // 10 minutes (OAuth flow should complete quickly)
+  })
+  
+  return response
 }

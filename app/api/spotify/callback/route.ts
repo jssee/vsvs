@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
-  const state = searchParams.get('state') // This is our sessionId
+  const state = searchParams.get('state')
   const error = searchParams.get('error')
   
   if (error) {
@@ -13,6 +13,25 @@ export async function GET(request: NextRequest) {
   if (!code || !state) {
     return NextResponse.redirect(`${request.nextUrl.origin}/protected?error=missing_params`)
   }
+  
+  // Validate state parameter and retrieve sessionId from secure cookie
+  const oauthStateCookie = request.cookies.get('spotify_oauth_state')
+  if (!oauthStateCookie) {
+    return NextResponse.redirect(`${request.nextUrl.origin}/protected?error=missing_oauth_state`)
+  }
+  
+  let storedData
+  try {
+    storedData = JSON.parse(oauthStateCookie.value)
+  } catch {
+    return NextResponse.redirect(`${request.nextUrl.origin}/protected?error=invalid_oauth_state`)
+  }
+  
+  if (storedData.state !== state) {
+    return NextResponse.redirect(`${request.nextUrl.origin}/protected?error=invalid_state`)
+  }
+  
+  const sessionId = storedData.sessionId
   
   try {
     const clientId = process.env.SPOTIFY_CLIENT_ID!
@@ -77,6 +96,9 @@ export async function GET(request: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30 // 30 days
     })
+    
+    // Clear the OAuth state cookie after successful authentication
+    response.cookies.delete('spotify_oauth_state')
     
     return response
     
