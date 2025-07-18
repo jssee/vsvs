@@ -2,6 +2,7 @@ import { getUser, signOut } from "$/actions/auth";
 import { redirect } from "next/navigation";
 import { Button } from "$/components/ui/button";
 import Link from "next/link";
+import { SpotifyIntegration } from "$/components/spotify-integration";
 
 export default async function ProtectedPage() {
   const user = await getUser();
@@ -49,6 +50,9 @@ export default async function ProtectedPage() {
               </Button>
             </form>
           </div>
+          
+          {/* Spotify Integration Test */}
+          <SpotifyIntegration sessionId="test-session-123" />
         </div>
       </div>
     </div>
