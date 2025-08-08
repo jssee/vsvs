@@ -158,20 +158,29 @@ defmodule VsvsWeb.ClubLive.Show do
                           </p>
                         </div>
                         <div class="flex items-center space-x-2">
-                          <%= if session.status in [:submission, :voting] do %>
-                            <.link
-                              navigate={~p"/sessions/#{session.id}"}
-                              class="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
-                            >
-                              Participate →
-                            </.link>
-                          <% else %>
-                            <.link
-                              navigate={~p"/sessions/#{session.id}"}
-                              class="text-gray-600 hover:text-gray-500 text-sm"
-                            >
-                              View Results
-                            </.link>
+                          <%= cond do %>
+                            <% session.status == :setup and @is_creator -> %>
+                              <.button
+                                phx-click="start_session"
+                                phx-value-session-id={session.id}
+                                class="text-sm bg-green-600 text-white hover:bg-green-500"
+                              >
+                                Start Session
+                              </.button>
+                            <% session.status in [:submission, :voting] -> %>
+                              <.link
+                                navigate={~p"/sessions/#{session.id}"}
+                                class="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                              >
+                                Participate →
+                              </.link>
+                            <% true -> %>
+                              <.link
+                                navigate={~p"/sessions/#{session.id}"}
+                                class="text-gray-600 hover:text-gray-500 text-sm"
+                              >
+                                View Results
+                              </.link>
                           <% end %>
                         </div>
                       </div>
@@ -252,13 +261,33 @@ defmodule VsvsWeb.ClubLive.Show do
 
   @impl true
   def handle_event("new_season", _params, socket) do
-    # For now, just show a flash message - we'll implement this later
-    {:noreply, put_flash(socket, :info, "Season creation coming soon!")}
+    {:noreply, push_navigate(socket, to: ~p"/clubs/#{socket.assigns.club.id}/seasons/new")}
   end
 
   def handle_event("new_session", %{"season-id" => season_id}, socket) do
-    # For now, just show a flash message - we'll implement this later
-    {:noreply, put_flash(socket, :info, "Session creation coming soon!")}
+    {:noreply, push_navigate(socket, to: ~p"/seasons/#{season_id}/sessions/new")}
+  end
+
+  def handle_event("start_session", %{"session-id" => session_id}, socket) do
+    session = Competitions.get_session!(session_id)
+    
+    case Competitions.start_session(session) do
+      {:ok, updated_session} ->
+        # Broadcast the session status change
+        Phoenix.PubSub.broadcast(
+          Vsvs.PubSub,
+          "session:#{session.id}",
+          {:session_status_changed, :submission}
+        )
+        
+        # Reload the club data to reflect the change
+        socket = load_club_data(socket, socket.assigns.club, socket.assigns.user_id, socket.assigns.is_creator)
+        
+        {:noreply, put_flash(socket, :info, "Session started! Members can now submit songs.")}
+      
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to start session")}
+    end
   end
 
   def handle_event("invite_member", _params, socket) do

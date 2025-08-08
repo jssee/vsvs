@@ -88,6 +88,13 @@ defmodule Vsvs.Competitions do
   end
 
   @doc """
+  Starts a session by changing its status to :submission.
+  """
+  def start_session(%Session{} = session) do
+    update_session(session, %{status: :submission})
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking session changes.
   """
   def change_session(%Session{} = session, attrs \\ %{}) do

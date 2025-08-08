@@ -55,6 +55,8 @@ defmodule VsvsWeb.Router do
       live "/dashboard", DashboardLive, :index
       live "/clubs/new", ClubLive.New, :new
       live "/clubs/:id", ClubLive.Show, :show
+      live "/clubs/:club_id/seasons/new", SeasonLive.New, :new
+      live "/seasons/:season_id/sessions/new", SessionLive.New, :new
       live "/sessions/:id", SessionLive.Show, :show
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
