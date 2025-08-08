@@ -181,6 +181,20 @@ defmodule Vsvs.Competitions do
     Vote.changeset(vote, attrs)
   end
 
+  @doc """
+  Deletes a submission.
+  """
+  def delete_submission(%Submission{} = submission) do
+    Repo.delete(submission)
+  end
+
+  @doc """
+  Deletes a vote.
+  """
+  def delete_vote(%Vote{} = vote) do
+    Repo.delete(vote)
+  end
+
   ## Business Logic Functions
 
   @doc """
