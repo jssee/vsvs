@@ -197,7 +197,7 @@ VSVS is a web application where friends compete to determine who has the best mu
 ## Pre-Implementation Decisions & Defaults
 
 ### Authentication
-- Default: Magic-link auth via `phx.gen.auth` token links (no passwords).
+- Default:  auth via `phx.gen.auth` 
 - Require email verification before club actions; sign-in emails use one-time, expiring links.
 - Spotify OAuth is for API access only (not for sign-in).
 

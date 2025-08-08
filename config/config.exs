@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :vsvs, :scopes,
+  user: [
+    default: true,
+    module: Vsvs.Accounts.Scope,
+    assign_key: :current_scope,
+    access_path: [:user, :id],
+    schema_key: :user_id,
+    schema_type: :id,
+    schema_table: :users,
+    test_data_fixture: Vsvs.AccountsFixtures,
+    test_setup_helper: :register_and_log_in_user
+  ]
+
 config :vsvs,
   ecto_repos: [Vsvs.Repo],
   generators: [timestamp_type: :utc_datetime]
@@ -59,6 +72,18 @@ config :logger, :default_formatter,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Configure Oban
+config :vsvs, Oban,
+  repo: Vsvs.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [default: 10, scheduled: 5, spotify: 5, mailer: 10]
+
+# Configure Spotify (will be set via environment variables)
+config :vsvs,
+  spotify_client_id: System.get_env("SPOTIFY_CLIENT_ID"),
+  spotify_client_secret: System.get_env("SPOTIFY_CLIENT_SECRET"),
+  spotify_redirect_uri: System.get_env("SPOTIFY_REDIRECT_URI")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

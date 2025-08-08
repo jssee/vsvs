@@ -10,6 +10,7 @@ defmodule Vsvs.Application do
     children = [
       VsvsWeb.Telemetry,
       Vsvs.Repo,
+      {Oban, Application.fetch_env!(:vsvs, Oban)},
       {DNSCluster, query: Application.get_env(:vsvs, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Vsvs.PubSub},
       # Start a worker by calling: Vsvs.Worker.start_link(arg)
