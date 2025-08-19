@@ -49,6 +49,9 @@
 		]
 	},
 	"dependencies": {
+		"@oslojs/crypto": "^1.0.1",
+		"@oslojs/encoding": "^1.1.0",
+		"bcrypt-ts": "^7.1.0",
 		"convex": "^1.25.4",
 		"convex-svelte": "^0.0.11"
 	}
