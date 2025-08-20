@@ -3,11 +3,12 @@ import {
 	setSessionTokenCookie,
 	deleteSessionTokenCookie
 } from '$lib/server/auth';
+import { AUTH_CONFIG } from '$lib/server/auth/config';
 
 import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const token = event.cookies.get('session') ?? null;
+	const token = event.cookies.get(AUTH_CONFIG.SESSION_COOKIE_NAME) ?? null;
 	if (token === null) {
 		event.locals.user = null;
 		event.locals.session = null;

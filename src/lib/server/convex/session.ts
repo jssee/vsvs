@@ -33,8 +33,7 @@ export const getSessionWithUser = query({
 			user: v.object({
 				_id: v.id('user'),
 				_creationTime: v.number(),
-				email: v.string(),
-				password: v.string()
+				email: v.string()
 			})
 		}),
 		v.null()
@@ -54,7 +53,9 @@ export const getSessionWithUser = query({
 			return null;
 		}
 
-		return { session, user };
+		// Remove password from user data
+		const { password, ...userPublic } = user;
+		return { session, user: userPublic };
 	}
 });
 
