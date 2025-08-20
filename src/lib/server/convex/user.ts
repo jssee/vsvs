@@ -8,13 +8,13 @@ export const get = query({
 		v.object({
 			_id: v.id('user'),
 			_creationTime: v.number(),
-			email: v.string(),
-			password: v.string()
+			email: v.string()
 		})
 	),
 	handler: async (ctx) => {
-		const user = await ctx.db.query('user').collect();
-		return user;
+		const users = await ctx.db.query('user').collect();
+		// Remove password from public user data
+		return users.map(({ password, ...userPublic }) => userPublic);
 	}
 });
 
@@ -26,8 +26,7 @@ export const getUserByEmail = query({
 		v.object({
 			_id: v.id('user'),
 			_creationTime: v.number(),
-			email: v.string(),
-			password: v.string()
+			email: v.string()
 		}),
 		v.null()
 	),
@@ -36,7 +35,14 @@ export const getUserByEmail = query({
 			.query('user')
 			.withIndex('by_email', (q) => q.eq('email', args.email))
 			.unique();
-		return user;
+		
+		if (!user) {
+			return null;
+		}
+		
+		// Remove password from public user data
+		const { password, ...userPublic } = user;
+		return userPublic;
 	}
 });
 
@@ -63,15 +69,33 @@ export const getUserPasswordHash = query({
 	},
 	returns: v.string(),
 	handler: async (ctx, args) => {
-		const row = await ctx.db
-			.query('user')
-			.withIndex('by_id', (q) => q.eq('_id', args.userId))
-			.unique();
+		const user = await ctx.db.get(args.userId);
 
-		if (!row) {
-			throw new Error('invalid user id');
+		if (!user) {
+			throw new Error('User not found');
 		}
 
-		return row.password;
+		return user.password;
+	}
+});
+
+export const getUserWithPasswordByEmail = query({
+	args: {
+		email: v.string()
+	},
+	returns: v.union(
+		v.object({
+			_id: v.id('user'),
+			_creationTime: v.number(),
+			email: v.string(),
+			password: v.string()
+		}),
+		v.null()
+	),
+	handler: async (ctx, args) => {
+		return await ctx.db
+			.query('user')
+			.withIndex('by_email', (q) => q.eq('email', args.email))
+			.unique();
 	}
 });

@@ -1,17 +1,14 @@
-import { redirect, fail } from '@sveltejs/kit';
-import { ConvexHttpClient } from 'convex/browser';
+import { fail, redirect } from '@sveltejs/kit';
 
+import { api } from '$lib/convex/_generated/api';
 import {
+	createSession,
 	generateSessionToken,
 	setSessionTokenCookie,
-	verifyPasswordHash,
-	createSession
+	verifyPasswordHash
 } from '$lib/server/auth';
-import type { PageServerLoad, Actions } from './$types';
-import { api } from '$lib/convex/_generated/api';
-import { env } from '$env/dynamic/public';
-
-const convex = new ConvexHttpClient(env.PUBLIC_CONVEX_URL);
+import { getConvexClient } from '$lib/server/convex-client';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
 	if (locals.session) {
@@ -21,6 +18,7 @@ export const load: PageServerLoad = ({ locals }) => {
 
 export const actions = {
 	default: async (event) => {
+		const convex = getConvexClient();
 		const formData = await event.request.formData();
 
 		const email = formData.get('email')?.toString();
@@ -46,7 +44,7 @@ export const actions = {
 			userId = await convex.mutation(api.user.createUser, { email, password });
 		} else {
 			try {
-				const user = await convex.query(api.user.getUserByEmail, { email });
+				const user = await convex.query(api.user.getUserWithPasswordByEmail, { email });
 
 				if (!user) {
 					return fail(400, {
@@ -55,15 +53,11 @@ export const actions = {
 					});
 				}
 
-				const passwordHash = await convex.query(api.user.getUserPasswordHash, {
-					userId: user._id
-				});
-				const validPassword = verifyPasswordHash(passwordHash, password);
-				console.log(validPassword);
+				const validPassword = verifyPasswordHash(user.password, password);
 
 				if (!validPassword) {
 					return fail(400, {
-						message: 'INVALID PASSWORD',
+						message: 'Invalid password',
 						email
 					});
 				}
@@ -79,13 +73,7 @@ export const actions = {
 		const token = generateSessionToken();
 		const session = await createSession(token, userId);
 
-		const userWithSession = await convex.query(api.session.getSessionWithUser, {
-			sessionId: session.sessionId
-		});
-
-		console.log(userWithSession);
-
-		setSessionTokenCookie(event, token, userWithSession!.session.expiresAt);
+		setSessionTokenCookie(event, token, session.expiresAt);
 		return redirect(303, '/');
 	}
 } satisfies Actions;
