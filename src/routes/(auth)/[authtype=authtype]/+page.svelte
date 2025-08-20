@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import AuthForm from "$lib/components/auth-form.svelte";
   import SubmitButton from "$lib/components/submit-button.svelte";
-  import { page } from "$app/state";
 
   let { form } = $props();
 
