@@ -1,4 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
+import * as z from "zod";
 
 import {
   createSession,
@@ -16,15 +17,18 @@ export const load: PageServerLoad = ({ locals }) => {
   }
 };
 
+const emailSchema = z.email();
+const passwordSchema = z.string().min(8);
+
 export const actions = {
   default: async (event) => {
     const convex = getConvexClient();
     const formData = await event.request.formData();
 
-    const email = formData.get("email")?.toString();
-    const password = formData.get("password")?.toString();
+    const email = emailSchema.safeParse(formData.get("email"));
+    const password = passwordSchema.safeParse(formData.get("password"));
 
-    if (!email) {
+    if (!email.success) {
       return fail(400, {
         success: false,
         message: "Invalid email",
@@ -32,7 +36,7 @@ export const actions = {
       } as const);
     }
 
-    if (!password) {
+    if (!password.success) {
       return fail(400, {
         success: false,
         message: "Invalid password",
@@ -41,11 +45,14 @@ export const actions = {
 
     let userId;
     if (event.params.authtype === "signup") {
-      userId = await convex.mutation(api.user.createUser, { email, password });
+      userId = await convex.mutation(api.user.createUser, {
+        email: email.data,
+        password: password.data,
+      });
     } else {
       try {
         const user = await convex.query(api.user.getUserWithPasswordByEmail, {
-          email,
+          email: email.data,
         });
 
         if (!user) {
@@ -55,7 +62,7 @@ export const actions = {
           });
         }
 
-        const validPassword = verifyPasswordHash(user.password, password);
+        const validPassword = verifyPasswordHash(user.password, password.data);
 
         if (!validPassword) {
           return fail(400, {
