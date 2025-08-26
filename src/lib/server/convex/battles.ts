@@ -118,7 +118,20 @@ export const getBattle = query({
       canJoin = !existingPlayer;
     }
 
-    return { ...battle, playerCount, canJoin };
+    return {
+      _id: battle._id,
+      name: battle.name,
+      creatorId: battle.creatorId,
+      status: battle.status,
+      visibility: battle.visibility,
+      maxPlayers: battle.maxPlayers,
+      doubleSubmissions: battle.doubleSubmissions,
+      inviteCode: battle.inviteCode,
+      currentSessionId: battle.currentSessionId,
+      createdAt: battle.createdAt,
+      playerCount,
+      canJoin,
+    };
   },
 });
 
