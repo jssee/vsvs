@@ -215,8 +215,13 @@ export const getBattleSessions = query({
 
     const sessionsWithDetails = await Promise.all(
       sessions.map(async (session) => {
-        // Placeholders until submissions/voting are implemented in later phases
-        const submissionCount = 0;
+        // Count submissions in this session
+        const submissionCount = (
+          await ctx.db
+            .query("submissions")
+            .withIndex("by_sessionId", (q) => q.eq("sessionId", session._id))
+            .collect()
+        ).length;
         const votingProgress = {
           totalVoters: 0,
           votedCount: 0,
@@ -318,4 +323,3 @@ export const getCurrentSession = query({
     };
   },
 });
-

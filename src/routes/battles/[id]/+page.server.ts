@@ -1,4 +1,5 @@
 import { fail, error } from "@sveltejs/kit";
+import { z } from "zod";
 import { getConvexClient } from "$lib/server/convex-client";
 import { api } from "$lib/server/convex/_generated/api";
 import type { Id } from "$lib/server/convex/_generated/dataModel";
@@ -14,20 +15,35 @@ export const load = async ({ params, locals }) => {
   const players = await convex.query(api.players.getBattlePlayers, { battleId });
   const sessions = await convex.query(api.sessions.getBattleSessions, { battleId });
   const currentSession = await convex.query(api.sessions.getCurrentSession, { battleId });
-  return { battle, players, sessions, currentSession, user: locals.user };
+  let sessionSubmissions: Array<any> = [];
+  let mySubmissions: Array<any> = [];
+  if (currentSession) {
+    sessionSubmissions = await convex.query(api.submissions.getSessionSubmissions, {
+      sessionId: currentSession._id as Id<"vsSessions">,
+      currentUserId: locals.user?._id,
+    });
+    if (locals.user) {
+      mySubmissions = await convex.query(api.submissions.getMySessionSubmissions, {
+        sessionId: currentSession._id as Id<"vsSessions">,
+        userId: locals.user._id,
+      });
+    }
+  }
+  return { battle, players, sessions, currentSession, sessionSubmissions, mySubmissions, user: locals.user };
 };
 
 export const actions = {
   invite: async ({ request, params, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
-    const email = String(form.get("email") || "").trim();
-    if (!email) return fail(400, { message: "Email is required" });
+    const schema = z.object({ email: z.string().email("Invalid email") });
+    const parsed = schema.safeParse({ email: String(form.get("email") || "").trim() });
+    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.invitations.sendInvitation, {
       userId: locals.user._id,
       battleId: params.id as Id<"battles">,
-      invitedEmail: email,
+      invitedEmail: parsed.data.email,
     });
     if (!result.success) {
       return fail(400, { message: result.message });
@@ -37,18 +53,22 @@ export const actions = {
   addSession: async ({ request, params, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
-    const vibe = String(form.get("vibe") || "").trim();
-    const description = String(form.get("description") || "").trim() || undefined;
-    const submissionStr = String(form.get("submissionDeadline") || "").trim();
-    const votingStr = String(form.get("votingDeadline") || "").trim();
+    const schema = z.object({
+      vibe: z.string().min(1, "Vibe is required").max(100, "Vibe too long"),
+      description: z.string().optional(),
+      submissionDeadline: z.string().min(1, "Submission deadline required"),
+      votingDeadline: z.string().min(1, "Voting deadline required"),
+    });
+    const parsed = schema.safeParse({
+      vibe: String(form.get("vibe") || "").trim(),
+      description: (String(form.get("description") || "").trim() || undefined) as any,
+      submissionDeadline: String(form.get("submissionDeadline") || "").trim(),
+      votingDeadline: String(form.get("votingDeadline") || "").trim(),
+    });
+    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
 
-    if (!vibe) return fail(400, { message: "Vibe is required" });
-    if (!submissionStr || !votingStr) {
-      return fail(400, { message: "Both deadlines are required" });
-    }
-
-    const submissionDeadline = Date.parse(submissionStr);
-    const votingDeadline = Date.parse(votingStr);
+    const submissionDeadline = Date.parse(parsed.data.submissionDeadline);
+    const votingDeadline = Date.parse(parsed.data.votingDeadline);
     if (Number.isNaN(submissionDeadline) || Number.isNaN(votingDeadline)) {
       return fail(400, { message: "Invalid deadline format" });
     }
@@ -60,8 +80,8 @@ export const actions = {
     const result = await convex.mutation(api.sessions.addSession, {
       userId: locals.user._id,
       battleId: params.id as Id<"battles">,
-      vibe,
-      description,
+      vibe: parsed.data.vibe,
+      description: parsed.data.description,
       submissionDeadline,
       votingDeadline,
     });
@@ -70,6 +90,72 @@ export const actions = {
       return fail(400, { message: result.message });
     }
 
+    return { success: true };
+  },
+  submitSong: async ({ request, locals }) => {
+    if (!locals.user) return fail(401, { message: "Not authenticated" });
+    const form = await request.formData();
+    const schema = z.object({
+      sessionId: z.string().min(1, "Session is required"),
+      spotifyUrl: z
+        .string()
+        .min(1, "URL is required")
+        .refine((s) => /spotify\.com\/track\/[a-zA-Z0-9]{22}/.test(s) || /^spotify:track:[a-zA-Z0-9]{22}$/.test(s), {
+          message: "Must be a Spotify track URL",
+        }),
+    });
+    const parsed = schema.safeParse({
+      sessionId: String(form.get("sessionId") || "").trim(),
+      spotifyUrl: String(form.get("spotifyUrl") || "").trim(),
+    });
+    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const convex = getConvexClient();
+    const result = await convex.mutation(api.submissions.submitSong, {
+      userId: locals.user._id,
+      sessionId: parsed.data.sessionId as Id<"vsSessions">,
+      spotifyUrl: parsed.data.spotifyUrl,
+    });
+    if (!result.success) return fail(400, { message: result.message });
+    return { success: true };
+  },
+  removeSubmission: async ({ request, locals }) => {
+    if (!locals.user) return fail(401, { message: "Not authenticated" });
+    const form = await request.formData();
+    const schema = z.object({ submissionId: z.string().min(1, "Submission ID required") });
+    const parsed = schema.safeParse({ submissionId: String(form.get("submissionId") || "").trim() });
+    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const convex = getConvexClient();
+    const result = await convex.mutation(api.submissions.removeSubmission, {
+      userId: locals.user._id,
+      submissionId: parsed.data.submissionId as Id<"submissions">,
+    });
+    if (!result.success) return fail(400, { message: result.message });
+    return { success: true };
+  },
+  updateSubmission: async ({ request, locals }) => {
+    if (!locals.user) return fail(401, { message: "Not authenticated" });
+    const form = await request.formData();
+    const schema = z.object({
+      submissionId: z.string().min(1, "Submission ID required"),
+      spotifyUrl: z
+        .string()
+        .min(1, "URL is required")
+        .refine((s) => /spotify\.com\/track\/[a-zA-Z0-9]{22}/.test(s) || /^spotify:track:[a-zA-Z0-9]{22}$/.test(s), {
+          message: "Must be a Spotify track URL",
+        }),
+    });
+    const parsed = schema.safeParse({
+      submissionId: String(form.get("submissionId") || "").trim(),
+      spotifyUrl: String(form.get("spotifyUrl") || "").trim(),
+    });
+    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const convex = getConvexClient();
+    const result = await convex.mutation(api.submissions.updateSubmissionUrl, {
+      userId: locals.user._id,
+      submissionId: parsed.data.submissionId as Id<"submissions">,
+      spotifyUrl: parsed.data.spotifyUrl,
+    });
+    if (!result.success) return fail(400, { message: result.message });
     return { success: true };
   },
 };

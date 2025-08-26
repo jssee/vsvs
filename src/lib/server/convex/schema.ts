@@ -67,6 +67,20 @@ export default defineSchema({
     .index("by_battleId", ["battleId"])
     .index("by_battleId_and_sessionNumber", ["battleId", "sessionNumber"]),
 
+  // Song submissions per session
+  submissions: defineTable({
+    sessionId: v.id("vsSessions"),
+    userId: v.id("user"),
+    spotifyUrl: v.string(),
+    submissionOrder: v.number(), // 1 or 2 for double submissions
+    submittedAt: v.number(),
+    starsReceived: v.number(), // Updated by voting system
+  })
+    .index("by_sessionId", ["sessionId"])
+    .index("by_session_and_user", ["sessionId", "userId"])
+    .index("by_session_and_url", ["sessionId", "spotifyUrl"])
+    .index("by_userId", ["userId"]),
+
   battlePlayers: defineTable({
     battleId: v.id("battles"),
     userId: v.id("user"),
