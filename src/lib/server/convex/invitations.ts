@@ -20,7 +20,10 @@ export const sendInvitation = mutation({
     if (!battle) return { success: false, message: "Battle not found" };
 
     if (battle.creatorId !== args.userId) {
-      return { success: false, message: "Only battle creator can send invitations" };
+      return {
+        success: false,
+        message: "Only battle creator can send invitations",
+      };
     }
 
     if (battle.status !== "active") {
@@ -47,7 +50,9 @@ export const sendInvitation = mutation({
       // Check for existing pending invitation
       const duplicate = await ctx.db
         .query("invitations")
-        .withIndex("by_invitedUserId", (q) => q.eq("invitedUserId", invitedUser._id))
+        .withIndex("by_invitedUserId", (q) =>
+          q.eq("invitedUserId", invitedUser._id),
+        )
         .filter((q) => q.eq(q.field("battleId"), args.battleId))
         .filter((q) => q.eq(q.field("status"), "pending"))
         .first();
@@ -68,7 +73,9 @@ export const sendInvitation = mutation({
       // Check for existing pending invitation by email
       const duplicate = await ctx.db
         .query("invitations")
-        .withIndex("by_invitedEmail", (q) => q.eq("invitedEmail", args.invitedEmail))
+        .withIndex("by_invitedEmail", (q) =>
+          q.eq("invitedEmail", args.invitedEmail),
+        )
         .filter((q) => q.eq(q.field("battleId"), args.battleId))
         .filter((q) => q.eq(q.field("status"), "pending"))
         .first();
@@ -163,7 +170,10 @@ export const respondToInvitation = mutation({
       invitation.invitedUserId === args.userId ||
       (!!invitation.invitedEmail && invitation.invitedEmail === user.email);
     if (!isRecipient) {
-      return { success: false, message: "Not authorized to respond to this invitation" };
+      return {
+        success: false,
+        message: "Not authorized to respond to this invitation",
+      };
     }
 
     const battle = await ctx.db.get(invitation.battleId);
@@ -216,4 +226,3 @@ export const respondToInvitation = mutation({
     return { success: true, message: "Invitation declined" };
   },
 });
-

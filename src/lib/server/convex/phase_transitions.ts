@@ -28,26 +28,40 @@ export const checkPhaseTransitions = internalMutation({
         await ctx.db.patch(session._id, { phase: "voting" });
 
         // Schedule playlist generation (stubbed; implemented in later phase)
-        await ctx.scheduler.runAfter(0, internal.spotify.generateSessionPlaylist, {
-          sessionId: session._id,
-        });
+        await ctx.scheduler.runAfter(
+          0,
+          internal.spotify.generateSessionPlaylist,
+          {
+            sessionId: session._id,
+          },
+        );
       } else if (session.phase === "voting") {
         // Check if voting should end
-        const shouldEndVoting = session.votingDeadline <= now || (await checkAllPlayersVoted(ctx, session._id));
+        const shouldEndVoting =
+          session.votingDeadline <= now ||
+          (await checkAllPlayersVoted(ctx, session._id));
 
         if (shouldEndVoting) {
           // Advance to completed phase
           await ctx.db.patch(session._id, { phase: "completed" });
 
           // Calculate session winner and update stats (no-op until later phase)
-          await ctx.scheduler.runAfter(0, internal.phase_transitions.calculateSessionWinner, {
-            sessionId: session._id,
-          });
+          await ctx.scheduler.runAfter(
+            0,
+            internal.phase_transitions.calculateSessionWinner,
+            {
+              sessionId: session._id,
+            },
+          );
 
           // Check if this completes the battle or advances next session
-          await ctx.scheduler.runAfter(0, internal.phase_transitions.handleSessionCompletion, {
-            sessionId: session._id,
-          });
+          await ctx.scheduler.runAfter(
+            0,
+            internal.phase_transitions.handleSessionCompletion,
+            {
+              sessionId: session._id,
+            },
+          );
         }
       }
     }
@@ -60,7 +74,10 @@ export const checkPhaseTransitions = internalMutation({
  * Check if all players in a session have voted
  * Placeholder until the voting system exists; returns false to rely on deadlines.
  */
-async function checkAllPlayersVoted(ctx: any, sessionId: string): Promise<boolean> {
+async function checkAllPlayersVoted(
+  ctx: any,
+  sessionId: string,
+): Promise<boolean> {
   const session = await ctx.db.get(sessionId);
   if (!session) return false;
   const players = await ctx.db
@@ -71,7 +88,9 @@ async function checkAllPlayersVoted(ctx: any, sessionId: string): Promise<boolea
   for (const p of players) {
     const stars = await ctx.db
       .query("stars")
-      .withIndex("by_session_and_voter", (q: any) => q.eq("sessionId", sessionId).eq("voterId", p.userId))
+      .withIndex("by_session_and_voter", (q: any) =>
+        q.eq("sessionId", sessionId).eq("voterId", p.userId),
+      )
       .collect();
     if (stars.length < 3) return false;
   }
@@ -95,7 +114,9 @@ export const handleSessionCompletion = internalMutation({
     const nextSession = await ctx.db
       .query("vsSessions")
       .withIndex("by_battleId_and_sessionNumber", (q) =>
-        q.eq("battleId", session.battleId).eq("sessionNumber", session.sessionNumber + 1),
+        q
+          .eq("battleId", session.battleId)
+          .eq("sessionNumber", session.sessionNumber + 1),
       )
       .first();
 
@@ -115,9 +136,13 @@ export const handleSessionCompletion = internalMutation({
       });
 
       // Calculate battle champion (no-op until later phase)
-      await ctx.scheduler.runAfter(0, internal.phase_transitions.calculateBattleChampion, {
-        battleId: session.battleId,
-      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.phase_transitions.calculateBattleChampion,
+        {
+          battleId: session.battleId,
+        },
+      );
     }
 
     return null;
@@ -141,7 +166,10 @@ export const calculateSessionWinner = internalMutation({
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
-    const userTotals = new Map<string, { totalStars: number; submissionIds: string[] }>();
+    const userTotals = new Map<
+      string,
+      { totalStars: number; submissionIds: string[] }
+    >();
     for (const sub of submissions) {
       const key = sub.userId;
       const entry = userTotals.get(key) || { totalStars: 0, submissionIds: [] };
@@ -154,20 +182,31 @@ export const calculateSessionWinner = internalMutation({
     for (const [userId, { totalStars }] of userTotals) {
       const player = await ctx.db
         .query("battlePlayers")
-        .withIndex("by_battle_and_user", (q) => q.eq("battleId", session.battleId).eq("userId", userId as any))
+        .withIndex("by_battle_and_user", (q) =>
+          q.eq("battleId", session.battleId).eq("userId", userId as any),
+        )
         .first();
       if (player) {
-        await ctx.db.patch(player._id, { totalStarsEarned: player.totalStarsEarned + totalStars });
+        await ctx.db.patch(player._id, {
+          totalStarsEarned: player.totalStarsEarned + totalStars,
+        });
       }
     }
 
     // Determine winner(s)
-    const max = userTotals.size > 0 ? Math.max(...Array.from(userTotals.values()).map((v) => v.totalStars)) : 0;
-    const winners = Array.from(userTotals.entries()).filter(([, v]) => v.totalStars === max);
+    const max =
+      userTotals.size > 0
+        ? Math.max(...Array.from(userTotals.values()).map((v) => v.totalStars))
+        : 0;
+    const winners = Array.from(userTotals.entries()).filter(
+      ([, v]) => v.totalStars === max,
+    );
     for (const [userId] of winners) {
       const player = await ctx.db
         .query("battlePlayers")
-        .withIndex("by_battle_and_user", (q) => q.eq("battleId", session.battleId).eq("userId", userId as any))
+        .withIndex("by_battle_and_user", (q) =>
+          q.eq("battleId", session.battleId).eq("userId", userId as any),
+        )
         .first();
       if (player) {
         await ctx.db.patch(player._id, { sessionsWon: player.sessionsWon + 1 });
@@ -192,7 +231,10 @@ export const calculateBattleChampion = internalMutation({
       .collect();
 
     // Find player(s) with most total stars
-    const maxStars = players.length > 0 ? Math.max(...players.map((p) => p.totalStarsEarned)) : 0;
+    const maxStars =
+      players.length > 0
+        ? Math.max(...players.map((p) => p.totalStarsEarned))
+        : 0;
     const _champions = players.filter((p) => p.totalStarsEarned === maxStars);
     // Could patch battle or players; left as future enhancement
     return null;

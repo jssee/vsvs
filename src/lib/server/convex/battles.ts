@@ -107,7 +107,11 @@ export const getBattle = query({
     ).length;
 
     let canJoin = false;
-    if (args.userId && battle.status === "active" && playerCount < battle.maxPlayers) {
+    if (
+      args.userId &&
+      battle.status === "active" &&
+      playerCount < battle.maxPlayers
+    ) {
       const uid = args.userId; // narrow for TS
       const existingPlayer = await ctx.db
         .query("battlePlayers")

@@ -53,12 +53,18 @@ export const awardStar = mutation({
       )
       .first();
     if (!player) {
-      return { success: false, message: "You are not a participant in this battle" };
+      return {
+        success: false,
+        message: "You are not a participant in this battle",
+      };
     }
 
     // Cannot vote for own submission
     if (submission.userId === args.userId) {
-      return { success: false, message: "You cannot vote for your own submission" };
+      return {
+        success: false,
+        message: "You cannot vote for your own submission",
+      };
     }
 
     // Count existing stars by this voter in this session
@@ -88,7 +94,11 @@ export const awardStar = mutation({
     });
 
     // Trigger a background phase check to possibly auto-complete
-    await ctx.scheduler.runAfter(0, internal.phase_transitions.checkPhaseTransitions, {});
+    await ctx.scheduler.runAfter(
+      0,
+      internal.phase_transitions.checkPhaseTransitions,
+      {},
+    );
 
     const starsRemaining = 2 - existingStars.length;
     return {
@@ -129,7 +139,10 @@ export const removeStar = mutation({
     }
 
     if (session.phase !== "voting") {
-      return { success: false, message: "Cannot change votes outside voting period" };
+      return {
+        success: false,
+        message: "Cannot change votes outside voting period",
+      };
     }
     if (Date.now() > session.votingDeadline) {
       return { success: false, message: "Voting deadline has passed" };
@@ -144,7 +157,10 @@ export const removeStar = mutation({
       .filter((q) => q.eq(q.field("submissionId"), args.submissionId))
       .first();
     if (!starToRemove) {
-      return { success: false, message: "You haven't voted for this submission" };
+      return {
+        success: false,
+        message: "You haven't voted for this submission",
+      };
     }
 
     await ctx.db.delete(starToRemove._id);
@@ -153,7 +169,11 @@ export const removeStar = mutation({
     });
 
     // Trigger background check
-    await ctx.scheduler.runAfter(0, internal.phase_transitions.checkPhaseTransitions, {});
+    await ctx.scheduler.runAfter(
+      0,
+      internal.phase_transitions.checkPhaseTransitions,
+      {},
+    );
 
     const remainingStars = await ctx.db
       .query("stars")
@@ -183,7 +203,8 @@ export const getMyVotingState = query({
   }),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
-    if (!session) return { starsRemaining: 0, votedSubmissions: [], canVote: false };
+    if (!session)
+      return { starsRemaining: 0, votedSubmissions: [], canVote: false };
 
     // Ensure participant
     const player = await ctx.db
@@ -192,7 +213,8 @@ export const getMyVotingState = query({
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )
       .first();
-    if (!player) return { starsRemaining: 0, votedSubmissions: [], canVote: false };
+    if (!player)
+      return { starsRemaining: 0, votedSubmissions: [], canVote: false };
 
     const userStars = await ctx.db
       .query("stars")
@@ -203,7 +225,10 @@ export const getMyVotingState = query({
 
     const votedSubmissions = userStars.map((s) => s.submissionId);
     const starsRemaining = Math.max(0, 3 - userStars.length);
-    const canVote = session.phase === "voting" && Date.now() <= session.votingDeadline && starsRemaining > 0;
+    const canVote =
+      session.phase === "voting" &&
+      Date.now() <= session.votingDeadline &&
+      starsRemaining > 0;
 
     return { starsRemaining, votedSubmissions, canVote };
   },
@@ -233,7 +258,12 @@ export const getSessionVotingSummary = query({
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
     if (!session) {
-      return { totalVoters: 0, completedVoters: 0, votingProgress: 0, submissionResults: [] };
+      return {
+        totalVoters: 0,
+        completedVoters: 0,
+        votingProgress: 0,
+        submissionResults: [],
+      };
     }
 
     const battlePlayers = await ctx.db
@@ -254,7 +284,8 @@ export const getSessionVotingSummary = query({
       }),
     );
     const completedVoters = progress.filter((c) => c === 3).length;
-    const votingProgress = totalVoters > 0 ? Math.round((completedVoters / totalVoters) * 100) : 0;
+    const votingProgress =
+      totalVoters > 0 ? Math.round((completedVoters / totalVoters) * 100) : 0;
 
     const submissions = await ctx.db
       .query("submissions")
@@ -289,4 +320,3 @@ export const getSessionVotingSummary = query({
     return { totalVoters, completedVoters, votingProgress, submissionResults };
   },
 });
-
