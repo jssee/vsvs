@@ -222,12 +222,26 @@ export const getBattleSessions = query({
             .withIndex("by_sessionId", (q) => q.eq("sessionId", session._id))
             .collect()
         ).length;
-        const votingProgress = {
-          totalVoters: 0,
-          votedCount: 0,
-          remainingVoters: [] as string[],
-        };
-
+        // Voting progress
+        const players = await ctx.db
+          .query("battlePlayers")
+          .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
+          .collect();
+        const totalVoters = players.length;
+        const votedFlags = await Promise.all(
+          players.map(async (p) => {
+            const stars = await ctx.db
+              .query("stars")
+              .withIndex("by_session_and_voter", (q) =>
+                q.eq("sessionId", session._id).eq("voterId", p.userId),
+              )
+              .collect();
+            return stars.length === 3;
+          }),
+        );
+        const votedCount = votedFlags.filter(Boolean).length;
+        const remainingVoters: string[] = [];
+        
         return {
           _id: session._id,
           sessionNumber: session.sessionNumber,
@@ -238,7 +252,11 @@ export const getBattleSessions = query({
           phase: session.phase,
           playlistUrl: session.playlistUrl,
           submissionCount,
-          votingProgress,
+          votingProgress: {
+            totalVoters,
+            votedCount,
+            remainingVoters,
+          },
         };
       }),
     );

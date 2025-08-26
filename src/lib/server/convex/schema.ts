@@ -81,6 +81,18 @@ export default defineSchema({
     .index("by_session_and_url", ["sessionId", "spotifyUrl"])
     .index("by_userId", ["userId"]),
 
+  // Voting stars per session
+  stars: defineTable({
+    sessionId: v.id("vsSessions"),
+    voterId: v.id("user"),
+    submissionId: v.id("submissions"),
+    votedAt: v.number(),
+  })
+    .index("by_sessionId", ["sessionId"])
+    .index("by_session_and_voter", ["sessionId", "voterId"])
+    .index("by_submissionId", ["submissionId"])
+    .index("by_voterId", ["voterId"]),
+
   battlePlayers: defineTable({
     battleId: v.id("battles"),
     userId: v.id("user"),

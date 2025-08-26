@@ -61,8 +61,21 @@ export const checkPhaseTransitions = internalMutation({
  * Placeholder until the voting system exists; returns false to rely on deadlines.
  */
 async function checkAllPlayersVoted(ctx: any, sessionId: string): Promise<boolean> {
-  // Voting system not implemented yet in Phase 2
-  return false;
+  const session = await ctx.db.get(sessionId);
+  if (!session) return false;
+  const players = await ctx.db
+    .query("battlePlayers")
+    .withIndex("by_battleId", (q: any) => q.eq("battleId", session.battleId))
+    .collect();
+  if (players.length === 0) return false;
+  for (const p of players) {
+    const stars = await ctx.db
+      .query("stars")
+      .withIndex("by_session_and_voter", (q: any) => q.eq("sessionId", sessionId).eq("voterId", p.userId))
+      .collect();
+    if (stars.length < 3) return false;
+  }
+  return true;
 }
 
 /**
@@ -118,7 +131,49 @@ export const handleSessionCompletion = internalMutation({
 export const calculateSessionWinner = internalMutation({
   args: { sessionId: v.id("vsSessions") },
   returns: v.null(),
-  handler: async () => {
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) return null;
+
+    // Aggregate stars per user for this session
+    const submissions = await ctx.db
+      .query("submissions")
+      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+
+    const userTotals = new Map<string, { totalStars: number; submissionIds: string[] }>();
+    for (const sub of submissions) {
+      const key = sub.userId;
+      const entry = userTotals.get(key) || { totalStars: 0, submissionIds: [] };
+      entry.totalStars += sub.starsReceived;
+      entry.submissionIds.push(sub._id);
+      userTotals.set(key, entry);
+    }
+
+    // Update players' totalStarsEarned with stars received this session
+    for (const [userId, { totalStars }] of userTotals) {
+      const player = await ctx.db
+        .query("battlePlayers")
+        .withIndex("by_battle_and_user", (q) => q.eq("battleId", session.battleId).eq("userId", userId as any))
+        .first();
+      if (player) {
+        await ctx.db.patch(player._id, { totalStarsEarned: player.totalStarsEarned + totalStars });
+      }
+    }
+
+    // Determine winner(s)
+    const max = userTotals.size > 0 ? Math.max(...Array.from(userTotals.values()).map((v) => v.totalStars)) : 0;
+    const winners = Array.from(userTotals.entries()).filter(([, v]) => v.totalStars === max);
+    for (const [userId] of winners) {
+      const player = await ctx.db
+        .query("battlePlayers")
+        .withIndex("by_battle_and_user", (q) => q.eq("battleId", session.battleId).eq("userId", userId as any))
+        .first();
+      if (player) {
+        await ctx.db.patch(player._id, { sessionsWon: player.sessionsWon + 1 });
+      }
+    }
+
     return null;
   },
 });
