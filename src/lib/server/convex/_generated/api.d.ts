@@ -24,6 +24,7 @@ import type * as sessions from "../sessions.js";
 import type * as spotify from "../spotify.js";
 import type * as submissions from "../submissions.js";
 import type * as user from "../user.js";
+import type * as voting from "../voting.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   spotify: typeof spotify;
   submissions: typeof submissions;
   user: typeof user;
+  voting: typeof voting;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

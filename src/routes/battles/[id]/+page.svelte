@@ -61,6 +61,7 @@
       submittedAt: number;
       starsReceived: number;
     }>;
+    votingState: null | { starsRemaining: number; votedSubmissions: string[]; canVote: boolean };
     user: { _id: string; email: string } | null;
   };
 
@@ -260,6 +261,51 @@
             </div>
           {:else}
             <p class="text-sm text-gray-600 mt-2">Sign in to submit a song.</p>
+          {/if}
+        </div>
+      {/if}
+      {#if data.currentSession.phase === 'voting'}
+        <div class="mt-4 grid gap-3">
+          {#if data.user}
+            <div class="text-sm">Stars remaining: {data.votingState?.starsRemaining ?? 0}</div>
+            {#if form?.message}
+              <p class="text-sm text-red-600">{form.message}</p>
+            {/if}
+            <div>
+              <h3 class="font-medium mb-2">Submissions</h3>
+              {#if data.sessionSubmissions.length === 0}
+                <p class="text-sm text-gray-600">No songs submitted.</p>
+              {:else}
+                <ul class="space-y-2">
+                  {#each data.sessionSubmissions as s (s._id)}
+                    {#if !s.isCurrentUser}
+                      <li class="text-sm flex items-center justify-between">
+                        <div class="flex-1">
+                          <a href={s.spotifyUrl} target="_blank" class="underline">{s.spotifyUrl}</a>
+                          <span class="text-xs text-gray-600 ml-1">by {s.userEmail}</span>
+                          <span class="text-xs text-gray-600 ml-2">⭐ {s.starsReceived}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          {#if data.votingState && data.votingState.votedSubmissions.includes(s._id)}
+                            <form method="post" action="?/removeStar">
+                              <input type="hidden" name="submissionId" value={s._id} />
+                              <button class="text-xs underline" type="submit">Unstar</button>
+                            </form>
+                          {:else}
+                            <form method="post" action="?/awardStar">
+                              <input type="hidden" name="submissionId" value={s._id} />
+                              <button class="text-xs bg-black text-white px-2 py-0.5 rounded" type="submit" disabled={!data.votingState?.canVote}>Give Star</button>
+                            </form>
+                          {/if}
+                        </div>
+                      </li>
+                    {/if}
+                  {/each}
+                </ul>
+              {/if}
+            </div>
+          {:else}
+            <p class="text-sm text-gray-600 mt-2">Sign in to vote.</p>
           {/if}
         </div>
       {/if}
