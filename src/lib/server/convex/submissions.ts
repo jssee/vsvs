@@ -1,9 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import {
-  validateSpotifyUrl,
-  normalizeSpotifyUrl,
-} from "../utils/spotify-urls";
+import { validateSpotifyUrl, normalizeSpotifyUrl } from "../utils/spotify-urls";
 import type { Id } from "./_generated/dataModel";
 
 /**
@@ -147,7 +144,10 @@ export const submitSong = mutation({
  * Get all submissions for a session
  */
 export const getSessionSubmissions = query({
-  args: { sessionId: v.id("vsSessions"), currentUserId: v.optional(v.id("user")) },
+  args: {
+    sessionId: v.id("vsSessions"),
+    currentUserId: v.optional(v.id("user")),
+  },
   returns: v.array(
     v.object({
       _id: v.id("submissions"),
@@ -178,7 +178,9 @@ export const getSessionSubmissions = query({
           submissionOrder: submission.submissionOrder,
           submittedAt: submission.submittedAt,
           starsReceived: submission.starsReceived,
-          isCurrentUser: args.currentUserId ? submission.userId === args.currentUserId : false,
+          isCurrentUser: args.currentUserId
+            ? submission.userId === args.currentUserId
+            : false,
         };
       }),
     );
@@ -282,7 +284,11 @@ export const removeSubmission = mutation({
  * Update a submission's Spotify URL (before deadline, owner only)
  */
 export const updateSubmissionUrl = mutation({
-  args: { userId: v.id("user"), submissionId: v.id("submissions"), spotifyUrl: v.string() },
+  args: {
+    userId: v.id("user"),
+    submissionId: v.id("submissions"),
+    spotifyUrl: v.string(),
+  },
   returns: v.object({ success: v.boolean(), message: v.string() }),
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
@@ -292,14 +298,20 @@ export const updateSubmissionUrl = mutation({
     if (!submission) return { success: false, message: "Submission not found" };
 
     if (submission.userId !== args.userId) {
-      return { success: false, message: "You can only edit your own submissions" };
+      return {
+        success: false,
+        message: "You can only edit your own submissions",
+      };
     }
 
     const session = await ctx.db.get(submission.sessionId);
     if (!session) return { success: false, message: "Session not found" };
 
     if (session.phase !== "submission") {
-      return { success: false, message: "Cannot edit after submission period ends" };
+      return {
+        success: false,
+        message: "Cannot edit after submission period ends",
+      };
     }
 
     if (Date.now() > session.submissionDeadline) {

@@ -9,4 +9,3 @@ export function generateInviteCode(): string {
   }
   return result;
 }
-

@@ -18,10 +18,11 @@ export const actions = {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
     const name = String(form.get("name") || "").trim();
-    const visibility = (String(form.get("visibility") || "private") ===
-    "public"
-      ? "public"
-      : "private") as "public" | "private";
+    const visibility = (
+      String(form.get("visibility") || "private") === "public"
+        ? "public"
+        : "private"
+    ) as "public" | "private";
     const maxPlayers = Number(form.get("maxPlayers") || 4);
     const doubleSubmissions = form.get("doubleSubmissions") === "on";
 
@@ -38,7 +39,8 @@ export const actions = {
       });
       throw redirect(303, `/battles/${battleId}`);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to create battle";
+      const message =
+        e instanceof Error ? e.message : "Failed to create battle";
       return fail(400, { message });
     }
   },
@@ -46,9 +48,10 @@ export const actions = {
   joinByCode: async ({ request, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
-    const inviteCode = String(form.get("inviteCode") || "").toUpperCase().trim();
-    if (!inviteCode)
-      return fail(400, { message: "Invite code is required" });
+    const inviteCode = String(form.get("inviteCode") || "")
+      .toUpperCase()
+      .trim();
+    if (!inviteCode) return fail(400, { message: "Invite code is required" });
     const convex = getConvexClient();
     const result = await convex.mutation(api.players.joinBattleByCode, {
       userId: locals.user._id,

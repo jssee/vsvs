@@ -12,29 +12,54 @@ export const load = async ({ params, locals }) => {
     userId: locals.user?._id,
   });
   if (!battle) throw error(404, "Battle not found");
-  const players = await convex.query(api.players.getBattlePlayers, { battleId });
-  const sessions = await convex.query(api.sessions.getBattleSessions, { battleId });
-  const currentSession = await convex.query(api.sessions.getCurrentSession, { battleId });
+  const players = await convex.query(api.players.getBattlePlayers, {
+    battleId,
+  });
+  const sessions = await convex.query(api.sessions.getBattleSessions, {
+    battleId,
+  });
+  const currentSession = await convex.query(api.sessions.getCurrentSession, {
+    battleId,
+  });
   let sessionSubmissions: Array<any> = [];
   let mySubmissions: Array<any> = [];
-  let votingState: null | { starsRemaining: number; votedSubmissions: string[]; canVote: boolean } = null;
+  let votingState: null | {
+    starsRemaining: number;
+    votedSubmissions: string[];
+    canVote: boolean;
+  } = null;
   if (currentSession) {
-    sessionSubmissions = await convex.query(api.submissions.getSessionSubmissions, {
-      sessionId: currentSession._id as Id<"vsSessions">,
-      currentUserId: locals.user?._id,
-    });
-    if (locals.user) {
-      mySubmissions = await convex.query(api.submissions.getMySessionSubmissions, {
+    sessionSubmissions = await convex.query(
+      api.submissions.getSessionSubmissions,
+      {
         sessionId: currentSession._id as Id<"vsSessions">,
-        userId: locals.user._id,
-      });
+        currentUserId: locals.user?._id,
+      },
+    );
+    if (locals.user) {
+      mySubmissions = await convex.query(
+        api.submissions.getMySessionSubmissions,
+        {
+          sessionId: currentSession._id as Id<"vsSessions">,
+          userId: locals.user._id,
+        },
+      );
       votingState = await convex.query(api.voting.getMyVotingState, {
         sessionId: currentSession._id as Id<"vsSessions">,
         userId: locals.user._id,
       });
     }
   }
-  return { battle, players, sessions, currentSession, sessionSubmissions, mySubmissions, votingState, user: locals.user };
+  return {
+    battle,
+    players,
+    sessions,
+    currentSession,
+    sessionSubmissions,
+    mySubmissions,
+    votingState,
+    user: locals.user,
+  };
 };
 
 export const actions = {
@@ -42,8 +67,11 @@ export const actions = {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
     const schema = z.object({ email: z.string().email("Invalid email") });
-    const parsed = schema.safeParse({ email: String(form.get("email") || "").trim() });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const parsed = schema.safeParse({
+      email: String(form.get("email") || "").trim(),
+    });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.invitations.sendInvitation, {
       userId: locals.user._id,
@@ -66,11 +94,13 @@ export const actions = {
     });
     const parsed = schema.safeParse({
       vibe: String(form.get("vibe") || "").trim(),
-      description: (String(form.get("description") || "").trim() || undefined) as any,
+      description: (String(form.get("description") || "").trim() ||
+        undefined) as any,
       submissionDeadline: String(form.get("submissionDeadline") || "").trim(),
       votingDeadline: String(form.get("votingDeadline") || "").trim(),
     });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
 
     const submissionDeadline = Date.parse(parsed.data.submissionDeadline);
     const votingDeadline = Date.parse(parsed.data.votingDeadline);
@@ -78,7 +108,9 @@ export const actions = {
       return fail(400, { message: "Invalid deadline format" });
     }
     if (votingDeadline <= submissionDeadline) {
-      return fail(400, { message: "Voting deadline must be after submission deadline" });
+      return fail(400, {
+        message: "Voting deadline must be after submission deadline",
+      });
     }
 
     const convex = getConvexClient();
@@ -105,15 +137,21 @@ export const actions = {
       spotifyUrl: z
         .string()
         .min(1, "URL is required")
-        .refine((s) => /spotify\.com\/track\/[a-zA-Z0-9]{22}/.test(s) || /^spotify:track:[a-zA-Z0-9]{22}$/.test(s), {
-          message: "Must be a Spotify track URL",
-        }),
+        .refine(
+          (s) =>
+            /spotify\.com\/track\/[a-zA-Z0-9]{22}/.test(s) ||
+            /^spotify:track:[a-zA-Z0-9]{22}$/.test(s),
+          {
+            message: "Must be a Spotify track URL",
+          },
+        ),
     });
     const parsed = schema.safeParse({
       sessionId: String(form.get("sessionId") || "").trim(),
       spotifyUrl: String(form.get("spotifyUrl") || "").trim(),
     });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.submissions.submitSong, {
       userId: locals.user._id,
@@ -126,9 +164,14 @@ export const actions = {
   removeSubmission: async ({ request, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
-    const schema = z.object({ submissionId: z.string().min(1, "Submission ID required") });
-    const parsed = schema.safeParse({ submissionId: String(form.get("submissionId") || "").trim() });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const schema = z.object({
+      submissionId: z.string().min(1, "Submission ID required"),
+    });
+    const parsed = schema.safeParse({
+      submissionId: String(form.get("submissionId") || "").trim(),
+    });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.submissions.removeSubmission, {
       userId: locals.user._id,
@@ -145,15 +188,21 @@ export const actions = {
       spotifyUrl: z
         .string()
         .min(1, "URL is required")
-        .refine((s) => /spotify\.com\/track\/[a-zA-Z0-9]{22}/.test(s) || /^spotify:track:[a-zA-Z0-9]{22}$/.test(s), {
-          message: "Must be a Spotify track URL",
-        }),
+        .refine(
+          (s) =>
+            /spotify\.com\/track\/[a-zA-Z0-9]{22}/.test(s) ||
+            /^spotify:track:[a-zA-Z0-9]{22}$/.test(s),
+          {
+            message: "Must be a Spotify track URL",
+          },
+        ),
     });
     const parsed = schema.safeParse({
       submissionId: String(form.get("submissionId") || "").trim(),
       spotifyUrl: String(form.get("spotifyUrl") || "").trim(),
     });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.submissions.updateSubmissionUrl, {
       userId: locals.user._id,
@@ -166,9 +215,14 @@ export const actions = {
   awardStar: async ({ request, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
-    const schema = z.object({ submissionId: z.string().min(1, "Submission ID required") });
-    const parsed = schema.safeParse({ submissionId: String(form.get("submissionId") || "").trim() });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const schema = z.object({
+      submissionId: z.string().min(1, "Submission ID required"),
+    });
+    const parsed = schema.safeParse({
+      submissionId: String(form.get("submissionId") || "").trim(),
+    });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.voting.awardStar, {
       userId: locals.user._id,
@@ -180,9 +234,14 @@ export const actions = {
   removeStar: async ({ request, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });
     const form = await request.formData();
-    const schema = z.object({ submissionId: z.string().min(1, "Submission ID required") });
-    const parsed = schema.safeParse({ submissionId: String(form.get("submissionId") || "").trim() });
-    if (!parsed.success) return fail(400, { message: parsed.error.issues[0].message });
+    const schema = z.object({
+      submissionId: z.string().min(1, "Submission ID required"),
+    });
+    const parsed = schema.safeParse({
+      submissionId: String(form.get("submissionId") || "").trim(),
+    });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
     const convex = getConvexClient();
     const result = await convex.mutation(api.voting.removeStar, {
       userId: locals.user._id,

@@ -69,7 +69,7 @@ export const addSession = mutation({
     const sessionNumber = existingSessions.length + 1;
 
     // Determine initial phase
-    const phase = sessionNumber === 1 ? "submission" : "pending" as const;
+    const phase = sessionNumber === 1 ? "submission" : ("pending" as const);
 
     const sessionId = await ctx.db.insert("vsSessions", {
       battleId: args.battleId,
@@ -241,7 +241,7 @@ export const getBattleSessions = query({
         );
         const votedCount = votedFlags.filter(Boolean).length;
         const remainingVoters: string[] = [];
-        
+
         return {
           _id: session._id,
           sessionNumber: session.sessionNumber,

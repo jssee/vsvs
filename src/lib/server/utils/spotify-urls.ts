@@ -35,7 +35,7 @@ export function validateSpotifyUrl(url: string): SpotifyUrlValidation {
   // Format 2: https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh?si=...
   if (!trackId) {
     const webWithParamsMatch = cleanUrl.match(
-      /spotify\.com\/track\/([a-zA-Z0-9]+)\?/
+      /spotify\.com\/track\/([a-zA-Z0-9]+)\?/,
     );
     if (webWithParamsMatch) {
       trackId = webWithParamsMatch[1];
@@ -83,4 +83,3 @@ export function extractSpotifyTrackId(url: string): string | null {
   const validation = validateSpotifyUrl(url);
   return validation.isValid ? validation.trackId! : null;
 }
-
