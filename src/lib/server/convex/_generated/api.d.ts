@@ -22,6 +22,7 @@ import type * as players from "../players.js";
 import type * as session from "../session.js";
 import type * as sessions from "../sessions.js";
 import type * as spotify from "../spotify.js";
+import type * as spotify_actions from "../spotify_actions.js";
 import type * as submissions from "../submissions.js";
 import type * as user from "../user.js";
 import type * as voting from "../voting.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   session: typeof session;
   sessions: typeof sessions;
   spotify: typeof spotify;
+  spotify_actions: typeof spotify_actions;
   submissions: typeof submissions;
   user: typeof user;
   voting: typeof voting;

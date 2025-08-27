@@ -27,10 +27,10 @@ export const checkPhaseTransitions = internalMutation({
         // Advance to voting phase
         await ctx.db.patch(session._id, { phase: "voting" });
 
-        // Schedule playlist generation (stubbed; implemented in later phase)
+        // Schedule playlist generation
         await ctx.scheduler.runAfter(
           0,
-          internal.spotify.generateSessionPlaylist,
+          internal.spotify_actions.generateSessionPlaylist,
           {
             sessionId: session._id,
           },
