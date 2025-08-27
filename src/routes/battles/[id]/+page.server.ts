@@ -250,4 +250,27 @@ export const actions = {
     if (!result.success) return fail(400, { message: result.message });
     return { success: true };
   },
+  generatePlaylistNow: async ({ request, locals }) => {
+    if (!locals.user) return fail(401, { message: "Not authenticated" });
+    const form = await request.formData();
+    const schema = z.object({
+      sessionId: z.string().min(1, "Session is required"),
+    });
+    const parsed = schema.safeParse({
+      sessionId: String(form.get("sessionId") || "").trim(),
+    });
+    if (!parsed.success)
+      return fail(400, { message: parsed.error.issues[0].message });
+    const convex = getConvexClient();
+    // Call public action to generate synchronously and return the URL
+    const result = await convex.action(
+      api.spotify_actions.generatePlaylistNow,
+      {
+        userId: locals.user._id,
+        sessionId: parsed.data.sessionId as Id<"vsSessions">,
+      },
+    );
+    if (!result.success) return fail(400, { message: result.message });
+    return { success: true, playlistUrl: result.playlistUrl };
+  },
 };

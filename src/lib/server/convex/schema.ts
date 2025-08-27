@@ -93,6 +93,25 @@ export default defineSchema({
     .index("by_submissionId", ["submissionId"])
     .index("by_voterId", ["voterId"]),
 
+  // Spotify app tokens (single record for app account)
+  spotifyAuth: defineTable({
+    accessToken: v.string(),
+    refreshToken: v.string(),
+    expiresAt: v.number(),
+  }),
+
+  // Optional cache of track metadata
+  trackMetadata: defineTable({
+    trackId: v.string(),
+    name: v.string(),
+    artists: v.array(v.string()),
+    album: v.string(),
+    imageUrl: v.optional(v.string()),
+    previewUrl: v.optional(v.string()),
+    durationMs: v.number(),
+    lastFetched: v.number(),
+  }).index("by_trackId", ["trackId"]),
+
   battlePlayers: defineTable({
     battleId: v.id("battles"),
     userId: v.id("user"),

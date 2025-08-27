@@ -218,6 +218,42 @@
           Math.floor(data.currentSession.timeRemaining.milliseconds / 60000),
         )}m
       </div>
+      {#if data.currentSession.playlistUrl}
+        <div class="mt-2 text-sm">
+          Playlist:
+          <a
+            class="underline"
+            href={data.currentSession.playlistUrl}
+            target="_blank">{data.currentSession.playlistUrl}</a
+          >
+        </div>
+      {/if}
+      {#if data.user && data.user._id === data.battle.creatorId}
+        <form method="post" action="?/generatePlaylistNow" class="mt-2">
+          <input
+            type="hidden"
+            name="sessionId"
+            value={data.currentSession._id}
+          />
+          <button
+            class="rounded bg-green-700 px-2 py-1 text-xs text-white"
+            type="submit"
+          >
+            Generate Playlist Now
+          </button>
+        </form>
+        {#if form?.message}
+          <div class="mt-1 text-xs text-red-600">{form.message}</div>
+        {/if}
+        {#if form?.playlistUrl}
+          <div class="mt-2 text-sm">
+            Generated Playlist:
+            <a class="underline" target="_blank" href={form.playlistUrl}
+              >{form.playlistUrl}</a
+            >
+          </div>
+        {/if}
+      {/if}
       {#if data.currentSession.phase === "submission"}
         <div class="mt-4 grid gap-3">
           {#if data.user}
