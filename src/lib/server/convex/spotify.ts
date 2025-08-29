@@ -42,7 +42,7 @@ export const getSessionForPlaylist = internalQuery({
         v.object({
           spotifyUrl: v.string(),
           starsReceived: v.number(),
-          userEmail: v.string(),
+          username: v.string(),
         }),
       ),
     }),
@@ -62,7 +62,7 @@ export const getSessionForPlaylist = internalQuery({
         return {
           spotifyUrl: s.spotifyUrl,
           starsReceived: s.starsReceived,
-          userEmail: u?.email || "Unknown User",
+          username: u?.username || "Unknown User",
         };
       }),
     );

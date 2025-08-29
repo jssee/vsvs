@@ -11,7 +11,7 @@ export const getBattlePlayers = query({
     v.object({
       _id: v.id("battlePlayers"),
       userId: v.id("user"),
-      userEmail: v.string(),
+      username: v.string(),
       joinedAt: v.number(),
       totalStarsEarned: v.number(),
       sessionsWon: v.number(),
@@ -30,7 +30,7 @@ export const getBattlePlayers = query({
     const results = [] as Array<{
       _id: Id<"battlePlayers">;
       userId: Id<"user">;
-      userEmail: string;
+      username: string;
       joinedAt: number;
       totalStarsEarned: number;
       sessionsWon: number;
@@ -42,7 +42,7 @@ export const getBattlePlayers = query({
       results.push({
         _id: p._id,
         userId: p.userId,
-        userEmail: user?.email ?? "Unknown",
+        username: user?.username ?? "Unknown",
         joinedAt: p.joinedAt,
         totalStarsEarned: p.totalStarsEarned,
         sessionsWon: p.sessionsWon,

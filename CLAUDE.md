@@ -71,7 +71,7 @@ Key auth files:
 
 ### Database Schema
 
-- `user` table: email (indexed), password (hashed)
+- `user` table: email (indexed), password (hashed), username (required, unique index)
 - `session` table: sessionId (indexed), userId (indexed), expiresAt
 - All Convex functions have proper type validation using `v` schema validators
 

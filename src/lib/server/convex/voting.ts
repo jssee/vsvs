@@ -247,7 +247,7 @@ export const getSessionVotingSummary = query({
       v.object({
         submissionId: v.id("submissions"),
         userId: v.id("user"),
-        userEmail: v.string(),
+        username: v.string(),
         spotifyUrl: v.string(),
         submissionOrder: v.number(),
         starsReceived: v.number(),
@@ -302,13 +302,13 @@ export const getSessionVotingSummary = query({
         const voters = await Promise.all(
           stars.map(async (s) => {
             const voter = await ctx.db.get(s.voterId);
-            return voter?.email || "Unknown";
+            return voter?.username || "Unknown";
           }),
         );
         return {
           submissionId: sub._id,
           userId: sub.userId,
-          userEmail: user?.email || "Unknown",
+          username: user?.username || "Unknown",
           spotifyUrl: sub.spotifyUrl,
           submissionOrder: sub.submissionOrder,
           starsReceived: sub.starsReceived,

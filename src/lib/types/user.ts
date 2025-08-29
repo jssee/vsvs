@@ -4,6 +4,7 @@ export type UserPublic = {
   _id: Id<"user">;
   _creationTime: number;
   email: string;
+  username: string;
 };
 
 export type UserWithPassword = Doc<"user">;

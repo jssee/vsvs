@@ -5,7 +5,11 @@ export default defineSchema({
   user: defineTable({
     email: v.string(),
     password: v.string(),
-  }).index("by_email", ["email"]),
+    // Required username handle for display and mentions
+    username: v.string(),
+  })
+    .index("by_email", ["email"])
+    .index("by_username", ["username"]),
 
   session: defineTable({
     sessionId: v.string(),
