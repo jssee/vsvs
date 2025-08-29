@@ -15,7 +15,7 @@
     players: Array<{
       _id: string;
       userId: string;
-      userEmail: string;
+      username: string;
       joinedAt: number;
       totalStarsEarned: number;
       sessionsWon: number;
@@ -51,7 +51,7 @@
     sessionSubmissions: Array<{
       _id: string;
       userId: string;
-      userEmail: string;
+      username: string;
       spotifyUrl: string;
       submissionOrder: number;
       submittedAt: number;
@@ -70,7 +70,7 @@
       votedSubmissions: string[];
       canVote: boolean;
     };
-    user: { _id: string; email: string } | null;
+    user: { _id: string; email: string; username: string } | null;
   };
 
   export let form: { message?: string } | undefined;
@@ -162,7 +162,7 @@
         {#each data.players as p (p._id)}
           <li class="flex items-center justify-between py-2">
             <div>
-              <div class="text-sm">{p.userEmail}</div>
+              <div class="text-sm">{p.username}</div>
               <div class="text-xs text-gray-600">
                 Stars: {p.totalStarsEarned} • Wins: {p.sessionsWon}
                 {#if p.isCreator}
@@ -383,7 +383,7 @@
                           >{s.spotifyUrl}</a
                         >
                         <span class="ml-1 text-xs text-gray-600"
-                          >by {s.userEmail}{s.isCurrentUser
+                          >by {s.username}{s.isCurrentUser
                             ? " (you)"
                             : ""}</span
                         >
@@ -423,7 +423,7 @@
                             class="underline">{s.spotifyUrl}</a
                           >
                           <span class="ml-1 text-xs text-gray-600"
-                            >by {s.userEmail}</span
+                            >by {s.username}</span
                           >
                           <span class="ml-2 text-xs text-gray-600"
                             >⭐ {s.starsReceived}</span

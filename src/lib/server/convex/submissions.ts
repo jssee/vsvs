@@ -85,7 +85,7 @@ export const submitSong = mutation({
       const existingUser = await ctx.db.get(existingSubmission.userId);
       return {
         success: false,
-        message: `This song was already submitted by ${existingUser?.email || "another user"}`,
+        message: `This song was already submitted by ${existingUser?.username || "another user"}`,
       };
     }
 
@@ -152,7 +152,7 @@ export const getSessionSubmissions = query({
     v.object({
       _id: v.id("submissions"),
       userId: v.id("user"),
-      userEmail: v.string(),
+      username: v.string(),
       spotifyUrl: v.string(),
       submissionOrder: v.number(),
       submittedAt: v.number(),
@@ -173,7 +173,7 @@ export const getSessionSubmissions = query({
         return {
           _id: submission._id,
           userId: submission.userId,
-          userEmail: user?.email || "Unknown User",
+          username: user?.username || "Unknown User",
           spotifyUrl: submission.spotifyUrl,
           submissionOrder: submission.submissionOrder,
           submittedAt: submission.submittedAt,
@@ -341,7 +341,7 @@ export const updateSubmissionUrl = mutation({
       const dupUser = await ctx.db.get(duplicate.userId);
       return {
         success: false,
-        message: `This song was already submitted by ${dupUser?.email || "another user"}`,
+        message: `This song was already submitted by ${dupUser?.username || "another user"}`,
       };
     }
 
@@ -361,7 +361,7 @@ export const getSessionSubmissionStats = query({
     submissionsByUser: v.array(
       v.object({
         userId: v.id("user"),
-        userEmail: v.string(),
+        username: v.string(),
         submissionCount: v.number(),
         submissions: v.array(
           v.object({
@@ -408,7 +408,7 @@ export const getSessionSubmissionStats = query({
     const submissionsByUser = Array.from(userSubmissions.entries()).map(
       ([userId, data]) => ({
         userId,
-        userEmail: data.user?.email || "Unknown User",
+        username: data.user?.username || "Unknown User",
         submissionCount: data.submissions.length,
         submissions: data.submissions.sort(
           (a, b) => a.submissionOrder - b.submissionOrder,
@@ -420,7 +420,7 @@ export const getSessionSubmissionStats = query({
       totalSubmissions: submissions.length,
       uniqueSubmitters: userSubmissions.size,
       submissionsByUser: submissionsByUser.sort((a, b) =>
-        a.userEmail.localeCompare(b.userEmail),
+        a.username.localeCompare(b.username),
       ),
     };
   },

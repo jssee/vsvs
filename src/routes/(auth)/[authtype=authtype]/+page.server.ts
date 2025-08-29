@@ -19,6 +19,11 @@ export const load: PageServerLoad = ({ locals }) => {
 
 const emailSchema = z.email();
 const passwordSchema = z.string().min(8);
+const usernameSchema = z
+  .string()
+  .min(3)
+  .max(30)
+  .regex(/^[a-zA-Z0-9_]+$/);
 
 export const actions = {
   default: async (event) => {
@@ -45,9 +50,33 @@ export const actions = {
 
     let userId;
     if (event.params.authtype === "signup") {
+      const username = usernameSchema.safeParse(formData.get("username"));
+      if (!username.success) {
+        return fail(400, {
+          success: false,
+          message: "Invalid username",
+          email: email.data,
+          username: String(formData.get("username") ?? ""),
+        } as const);
+      }
+
+      // Enforce unique username
+      const existing = await convex.query(api.user.getUserByUsername, {
+        username: username.data,
+      });
+      if (existing) {
+        return fail(400, {
+          success: false,
+          message: "Username already taken",
+          email: email.data,
+          username: username.data,
+        } as const);
+      }
+
       userId = await convex.mutation(api.user.createUser, {
         email: email.data,
         password: password.data,
+        username: username.data,
       });
     } else {
       try {

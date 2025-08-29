@@ -9,6 +9,7 @@ export const get = query({
       _id: v.id("user"),
       _creationTime: v.number(),
       email: v.string(),
+      username: v.string(),
     }),
   ),
   handler: async (ctx) => {
@@ -27,6 +28,7 @@ export const getUserByEmail = query({
       _id: v.id("user"),
       _creationTime: v.number(),
       email: v.string(),
+      username: v.string(),
     }),
     v.null(),
   ),
@@ -46,10 +48,39 @@ export const getUserByEmail = query({
   },
 });
 
+export const getUserByUsername = query({
+  args: {
+    username: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("user"),
+      _creationTime: v.number(),
+      email: v.string(),
+      username: v.string(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("user")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    const { password, ...userPublic } = user;
+    return userPublic;
+  },
+});
+
 export const createUser = mutation({
   args: {
     email: v.string(),
     password: v.string(),
+    username: v.string(),
   },
   returns: v.id("user"),
   handler: async (ctx, args) => {
@@ -59,6 +90,7 @@ export const createUser = mutation({
     return await ctx.db.insert("user", {
       email: args.email,
       password: hash,
+      username: args.username,
     });
   },
 });
@@ -89,6 +121,7 @@ export const getUserWithPasswordByEmail = query({
       _creationTime: v.number(),
       email: v.string(),
       password: v.string(),
+      username: v.string(),
     }),
     v.null(),
   ),
@@ -109,6 +142,7 @@ export const getUserById = query({
       _id: v.id("user"),
       _creationTime: v.number(),
       email: v.string(),
+      username: v.string(),
     }),
     v.null(),
   ),

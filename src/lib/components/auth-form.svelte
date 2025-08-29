@@ -6,6 +6,7 @@
     success: false;
     message: string;
     email?: string;
+    username?: string;
   };
   export type FormData = FormSuccessData | FormFailureData;
 
@@ -13,6 +14,7 @@
     form?: FormData;
     submitButton: Snippet<[{ pending: boolean; success: boolean }]>;
     children: Snippet;
+    mode?: "signup" | "signin";
   };
 </script>
 
@@ -21,7 +23,7 @@
   import type { SubmitFunction } from "@sveltejs/kit";
   import type { Snippet } from "svelte";
 
-  let { form, submitButton, children }: AuthFormProps = $props();
+  let { form, submitButton, children, mode = "signin" }: AuthFormProps = $props();
 
   let pending = $state(false);
   const enhanceCallback: SubmitFunction<
@@ -44,9 +46,31 @@
     }
     return "";
   });
+
+  const usernameDefaultValue = $derived.by(() => {
+    if (!form?.success && form?.username) {
+      return form.username;
+    }
+    return "";
+  });
 </script>
 
 <form method="POST" use:enhance={enhanceCallback}>
+  {#if mode === "signup"}
+    <div>
+      <label for="username">Username</label>
+
+      <input
+        id="username"
+        name="username"
+        type="text"
+        placeholder="yourname"
+        autocomplete="username"
+        required
+        {usernameDefaultValue}
+      />
+    </div>
+  {/if}
   <div>
     <label for="email">Email Address</label>
 

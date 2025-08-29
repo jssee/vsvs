@@ -34,6 +34,7 @@ export const getSessionWithUser = query({
         _id: v.id("user"),
         _creationTime: v.number(),
         email: v.string(),
+        username: v.string(),
       }),
     }),
     v.null(),

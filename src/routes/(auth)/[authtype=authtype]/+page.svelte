@@ -22,7 +22,7 @@
         Use your email and password to {signInSignUp.toLowerCase()}
       </p>
     </div>
-    <AuthForm form={form ?? undefined}>
+    <AuthForm form={form ?? undefined} mode={page.params.authtype}>
       {#snippet submitButton({ pending, success })}
         <SubmitButton {pending} {success}>{signInSignUp}</SubmitButton>
       {/snippet}
