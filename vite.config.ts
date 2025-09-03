@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit(), devtoolsJson()],
+  // @ts-expect-error https://github.com/vitest-dev/vitest/releases/tag/v2.1.7
   test: {
     expect: { requireAssertions: true },
     projects: [

@@ -23,7 +23,12 @@
   import type { SubmitFunction } from "@sveltejs/kit";
   import type { Snippet } from "svelte";
 
-  let { form, submitButton, children, mode = "signin" }: AuthFormProps = $props();
+  let {
+    form,
+    submitButton,
+    children,
+    mode = "signin",
+  }: AuthFormProps = $props();
 
   let pending = $state(false);
   const enhanceCallback: SubmitFunction<
@@ -67,7 +72,7 @@
         placeholder="yourname"
         autocomplete="username"
         required
-        {usernameDefaultValue}
+        defaultValue={usernameDefaultValue}
       />
     </div>
   {/if}
