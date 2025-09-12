@@ -10,7 +10,7 @@ import { api } from "$lib/server/convex/_generated/api";
 import type { Id } from "$lib/server/convex/_generated/dataModel";
 import { AUTH_CONFIG, COOKIE_OPTIONS } from "$lib/server/auth/config";
 import { getConvexClient } from "$lib/server/convex-client";
-import type { SessionValidationResult } from "$lib/types/user";
+import type { AuthState } from "$lib/types/user";
 
 export function generateSessionToken(): string {
   const bytes = new Uint8Array(20);
@@ -36,9 +36,7 @@ export async function createSession(
   return { sessionId, userId, expiresAt };
 }
 
-export async function validateSessionToken(
-  token: string,
-): Promise<SessionValidationResult> {
+export async function validateSessionToken(token: string): Promise<AuthState> {
   const convex = getConvexClient();
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
   const result = await convex.query(api.session.getSessionWithUser, {

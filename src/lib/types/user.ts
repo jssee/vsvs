@@ -1,19 +1,10 @@
-import type { Doc, Id } from "$lib/server/convex/_generated/dataModel";
+import type { Doc } from "$lib/server/convex/_generated/dataModel";
 
-export type UserPublic = {
-  _id: Id<"user">;
-  _creationTime: number;
-  email: string;
-  username: string;
-};
+export type User = Omit<Doc<"user">, "password">;
 
-export type UserWithPassword = Doc<"user">;
-
-export type SessionWithUser = {
+export type AuthContext = {
   session: Doc<"session">;
-  user: UserPublic;
+  user: User;
 };
 
-export type SessionValidationResult =
-  | SessionWithUser
-  | { session: null; user: null };
+export type AuthState = AuthContext | { [K in keyof AuthContext]: null };
