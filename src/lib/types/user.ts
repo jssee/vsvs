@@ -1,4 +1,4 @@
-import type { Doc } from "$lib/server/convex/_generated/dataModel";
+import type { Doc } from "$lib/convex/_generated/dataModel";
 
 export type User = Omit<Doc<"user">, "password">;
 

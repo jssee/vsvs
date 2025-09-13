@@ -15,14 +15,21 @@ export const handle: Handle = async ({ event, resolve }) => {
     return resolve(event);
   }
 
-  const { session, user } = await validateSessionToken(token);
-  if (session !== null) {
-    setSessionTokenCookie(event, token, session.expiresAt);
+  const result = await validateSessionToken(token);
+  if (result.isOk()) {
+    const { session, user } = result.value;
+    if (session !== null) {
+      setSessionTokenCookie(event, token, session.expiresAt);
+    } else {
+      deleteSessionTokenCookie(event);
+    }
+    event.locals.session = session;
+    event.locals.user = user;
   } else {
+    // On error, clear auth state and cookie
     deleteSessionTokenCookie(event);
+    event.locals.session = null;
+    event.locals.user = null;
   }
-
-  event.locals.session = session;
-  event.locals.user = user;
   return resolve(event);
 };

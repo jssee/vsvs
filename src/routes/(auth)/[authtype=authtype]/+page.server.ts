@@ -7,8 +7,8 @@ import {
   setSessionTokenCookie,
   verifyPasswordHash,
 } from "$lib/server/auth";
-import { getConvexClient } from "$lib/server/convex-client";
-import { api } from "$lib/server/convex/_generated/api";
+import { getConvexClient } from "$lib/convex-client";
+import { api } from "$lib/convex/_generated/api";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = ({ locals }) => {
@@ -109,7 +109,11 @@ export const actions = {
     }
 
     const token = generateSessionToken();
-    const session = await createSession(token, userId);
+    const created = await createSession(token, userId);
+    if (!created.ok) {
+      return fail(500, { message: "Failed to create session" });
+    }
+    const session = created.value;
 
     setSessionTokenCookie(event, token, session.expiresAt);
     return redirect(303, "/");

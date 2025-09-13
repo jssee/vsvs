@@ -1,8 +1,8 @@
 import { fail, error } from "@sveltejs/kit";
 import { z } from "zod";
-import { getConvexClient } from "$lib/server/convex-client";
-import { api } from "$lib/server/convex/_generated/api";
-import type { Id } from "$lib/server/convex/_generated/dataModel";
+import { getConvexClient } from "$lib/convex-client";
+import { api } from "$lib/convex/_generated/api";
+import type { Id } from "$lib/convex/_generated/dataModel";
 
 export const load = async ({ params, locals }) => {
   const convex = getConvexClient();

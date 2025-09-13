@@ -1,16 +1,20 @@
-import { redirect, fail } from "@sveltejs/kit";
-import { getConvexClient } from "$lib/server/convex-client";
-import { api } from "$lib/server/convex/_generated/api";
+import { fail, redirect } from "@sveltejs/kit";
 
-export const load = async ({ locals }) => {
-  if (!locals.user) {
-    return { myBattles: [], user: null };
+import { getConvexClient } from "$lib/convex-client";
+import { api } from "$lib/convex/_generated/api";
+import type { Actions, PageServerLoad } from "./$types";
+
+export const load: PageServerLoad = async ({ locals }) => {
+  if (!locals.session || !locals.user) {
+    redirect(302, "/signin");
   }
+
   const convex = getConvexClient();
-  const myBattles = await convex.query(api.battles.getMyBattles, {
+  const battles = await convex.query(api.battles.getMyBattles, {
     userId: locals.user._id,
   });
-  return { myBattles, user: locals.user };
+
+  return { battles, user: locals.user };
 };
 
 export const actions = {
@@ -62,4 +66,4 @@ export const actions = {
     }
     return fail(400, { message: result.message });
   },
-};
+} satisfies Actions;
