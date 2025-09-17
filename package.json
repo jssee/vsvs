@@ -36,6 +36,7 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "svelte": "^5.38.10",
     "svelte-check": "^4.3.1",
+    "sveltekit-superforms": "^2.27.1",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.43.0",
@@ -56,8 +57,9 @@
     "bits-ui": "^2.9.8",
     "convex": "^1.27.0",
     "convex-svelte": "^0.0.11",
+    "formsnap": "^2.0.1",
     "typescript-result": "^3.5.2",
-    "zod": "^4.1.8"
+    "zod": "4.0.10"
   },
   "prettier": {
     "plugins": [

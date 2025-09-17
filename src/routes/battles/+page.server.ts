@@ -1,69 +1,60 @@
-import { fail, redirect } from "@sveltejs/kit";
+import { redirect, fail, error } from "@sveltejs/kit";
+import * as z from "zod";
+import { superValidate } from "sveltekit-superforms";
+import { zod4 } from "sveltekit-superforms/adapters";
+import { Result } from "typescript-result";
 
 import { getConvexClient } from "$lib/convex-client";
 import { api } from "$lib/convex/_generated/api";
 import type { Actions, PageServerLoad } from "./$types";
+
+const convex = getConvexClient();
+
+const formSchema = z.object({
+  name: z.string("Must be between 3 and 20 characters").min(3).max(20),
+  visibility: z.enum(["public", "private"]).default("private"),
+  doubleSubmissions: z.boolean().default(false),
+  maxPlayers: z.number().positive().default(4),
+});
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.session || !locals.user) {
     redirect(302, "/signin");
   }
 
-  const convex = getConvexClient();
   const battles = await convex.query(api.battles.getMyBattles, {
     userId: locals.user._id,
   });
 
-  return { battles, user: locals.user };
+  return {
+    battles,
+    user: locals.user,
+    form: await superValidate(zod4(formSchema)),
+  };
 };
 
 export const actions = {
   createBattle: async ({ request, locals }) => {
-    if (!locals.user) return fail(401, { message: "Not authenticated" });
-    const form = await request.formData();
-    const name = String(form.get("name") || "").trim();
-    const visibility = (
-      String(form.get("visibility") || "private") === "public"
-        ? "public"
-        : "private"
-    ) as "public" | "private";
-    const maxPlayers = Number(form.get("maxPlayers") || 4);
-    const doubleSubmissions = form.get("doubleSubmissions") === "on";
+    const form = await superValidate(request, zod4(formSchema));
 
-    if (!name) return fail(400, { message: "Name is required" });
+    if (!form.valid) return fail(400, { form });
 
-    const convex = getConvexClient();
-    try {
-      const { battleId } = await convex.mutation(api.battles.createBattle, {
-        userId: locals.user._id,
-        name,
-        visibility,
-        maxPlayers,
-        doubleSubmissions,
-      });
-      throw redirect(303, `/battles/${battleId}`);
-    } catch (e: unknown) {
-      const message =
-        e instanceof Error ? e.message : "Failed to create battle";
-      return fail(400, { message });
-    }
-  },
+    const { name, visibility, maxPlayers, doubleSubmissions } = form.data;
 
-  joinByCode: async ({ request, locals }) => {
-    if (!locals.user) return fail(401, { message: "Not authenticated" });
-    const form = await request.formData();
-    const inviteCode = String(form.get("inviteCode") || "")
-      .toUpperCase()
-      .trim();
-    if (!inviteCode) return fail(400, { message: "Invite code is required" });
-    const convex = getConvexClient();
-    const result = await convex.mutation(api.players.joinBattleByCode, {
-      userId: locals.user._id,
-      inviteCode,
-    });
-    if (result.success && result.battleId) {
-      throw redirect(303, `/battles/${result.battleId}`);
-    }
-    return fail(400, { message: result.message });
+    const result = Result.try(
+      async () =>
+        await convex.mutation(api.battles.createBattle, {
+          userId: locals.user!._id,
+          name,
+          visibility,
+          maxPlayers,
+          doubleSubmissions,
+        }),
+    );
+
+    return result.fold(
+      ({ battleId }) => redirect(302, `/battles/${battleId}`),
+      (err) => error(400, { message: err.message }),
+    );
   },
 } satisfies Actions;
