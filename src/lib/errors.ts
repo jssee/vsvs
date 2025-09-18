@@ -6,12 +6,12 @@
  * identifying and categorizing different types of errors
  * for structured error handling.
  *
- * @template Kind - The type of the tag used for identifying the error.
+ * @template Tag - The type of the tag used for identifying the error.
  * @abstract
  * @extends {Error}
  */
-export abstract class KindOfError<const Kind extends string> extends Error {
-  readonly kind: Kind;
+export abstract class TaggedError<const Tag extends string> extends Error {
+  readonly tag: Tag;
 
   /**
    * Creates a new TaggedError instance.
@@ -22,7 +22,7 @@ export abstract class KindOfError<const Kind extends string> extends Error {
   constructor(message: string, options: ErrorOptions = {}) {
     super(message, options);
     this.name = this.constructor.name;
-    this.kind = this.name as Kind;
+    this.tag = this.name as Tag;
 
     if (options.cause && options.cause instanceof Error) {
       this.stack = `${this.stack}\nCaused by: ${options.cause.stack}`;
@@ -30,58 +30,53 @@ export abstract class KindOfError<const Kind extends string> extends Error {
   }
 }
 
-export class AuthSessionCreationError extends KindOfError<"AuthSessionCreationError"> {
-  readonly sessionId: string;
+export class AuthSessionCreationError extends TaggedError<"AuthSessionCreationError"> {
+  constructor(options: ErrorOptions = {}) {
+    super("Failed to create sessions", options);
+  }
+}
+
+export class BattleCreationError extends TaggedError<"BattleCreationError"> {
   readonly userId: string;
-  readonly expiresAt: number;
+  readonly name: string;
+  readonly visibility: "public" | "private";
+  readonly maxPlayers: number;
+  readonly doubleSubmissions: boolean;
 
   constructor(
-    sessionId: string,
-    userId: string,
-    expiresAt: number,
+    params: {
+      userId: string;
+      name: string;
+      visibility: "public" | "private";
+      maxPlayers: number;
+      doubleSubmissions: boolean;
+    },
     options: ErrorOptions = {},
   ) {
     super(
-      `Failed to create sessions:\n sessionId=${sessionId}, userId=${userId}, expiresAt=${expiresAt}`,
+      `Failed to create battle: name="${params.name}", visibility=${params.visibility}, maxPlayers=${params.maxPlayers}, doubleSubmissions=${params.doubleSubmissions}`,
       options,
     );
-    this.sessionId = sessionId;
-    this.userId = userId;
-    this.expiresAt = expiresAt;
+    this.userId = params.userId;
+    this.name = params.name;
+    this.visibility = params.visibility;
+    this.maxPlayers = params.maxPlayers;
+    this.doubleSubmissions = params.doubleSubmissions;
   }
 }
 
-export class AuthSessionLookupError extends Error {
-  readonly kind = "auth-session-lookup" as const;
-  constructor(message = "Failed to look up session") {
-    super(message);
+export class EmailAlreadyInUseError extends TaggedError<"EmailAlreadyInUseError"> {
+  readonly email: string;
+  constructor(email: string, options: ErrorOptions = {}) {
+    super(`Email already in use: ${email}`, options);
+    this.email = email;
   }
 }
 
-export class AuthSessionDeletionError extends Error {
-  readonly kind = "auth-session-delete" as const;
-  constructor(message = "Failed to delete session") {
-    super(message);
-  }
-}
-
-export class AuthSessionExpiryUpdateError extends Error {
-  readonly kind = "auth-session-expiry-update" as const;
-  constructor(message = "Failed to update session expiry") {
-    super(message);
-  }
-}
-
-export class AuthSessionInvalidationError extends Error {
-  readonly kind = "auth-session-invalidate" as const;
-  constructor(message = "Failed to invalidate session") {
-    super(message);
-  }
-}
-
-export class AuthUserSessionsInvalidationError extends Error {
-  readonly kind = "auth-user-invalidate-all-sessions" as const;
-  constructor(message = "Failed to invalidate all user sessions") {
-    super(message);
+export class UsernameAlreadyTakenError extends TaggedError<"UsernameAlreadyTakenError"> {
+  readonly username: string;
+  constructor(username: string, options: ErrorOptions = {}) {
+    super(`Username already taken: ${username}`, options);
+    this.username = username;
   }
 }

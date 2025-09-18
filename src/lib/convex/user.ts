@@ -1,6 +1,9 @@
 import { genSaltSync, hashSync } from "bcrypt-ts";
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Result } from "typescript-result";
+
+import { EmailAlreadyInUseError, UsernameAlreadyTakenError } from "../errors";
 
 export const get = query({
   args: {},
@@ -84,6 +87,24 @@ export const createUser = mutation({
   },
   returns: v.id("user"),
   handler: async (ctx, args) => {
+    const existingEmail = await ctx.db
+      .query("user")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+
+    if (existingEmail) {
+      throw new EmailAlreadyInUseError(args.email);
+    }
+
+    const existingUsername = await ctx.db
+      .query("user")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .unique();
+
+    if (existingUsername) {
+      throw new UsernameAlreadyTakenError(args.username);
+    }
+
     const salt = genSaltSync(10);
     const hash = hashSync(args.password, salt);
 

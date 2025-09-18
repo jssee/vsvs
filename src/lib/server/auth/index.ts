@@ -38,7 +38,7 @@ export async function createSession(token: string, userId: Id<"user">) {
 
       return { sessionId, userId, expiresAt };
     },
-    (error) => new AuthSessionCreationError(sessionId, userId, expiresAt),
+    (error) => new AuthSessionCreationError({ cause: error }),
   );
 }
 
