@@ -1,5 +1,8 @@
-import { fail, redirect } from "@sveltejs/kit";
+import { fail, redirect, error } from "@sveltejs/kit";
 import * as z from "zod";
+import { superValidate, setError } from "sveltekit-superforms";
+import { zod4 } from "sveltekit-superforms/adapters";
+import { Result } from "typescript-result";
 
 import {
   createSession,
@@ -9,113 +12,120 @@ import {
 } from "$lib/server/auth";
 import { getConvexClient } from "$lib/convex-client";
 import { api } from "$lib/convex/_generated/api";
+import type { Id } from "$lib/convex/_generated/dataModel";
 import type { Actions, PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = ({ locals }) => {
+const convex = getConvexClient();
+
+const formSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  username: z
+    .string()
+    .min(3, "Username must be between 3 and 30 characters")
+    .max(30, "Username must be between 3 and 30 characters")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Username can only contain letters, numbers, and underscores",
+    )
+    .optional(),
+});
+
+export const load: PageServerLoad = async ({ locals }) => {
   if (locals.session) {
     return redirect(307, "/");
   }
-};
 
-const emailSchema = z.email();
-const passwordSchema = z.string().min(8);
-const usernameSchema = z
-  .string()
-  .min(3)
-  .max(30)
-  .regex(/^[a-zA-Z0-9_]+$/);
+  return {
+    form: await superValidate(zod4(formSchema)),
+  };
+};
 
 export const actions = {
   default: async (event) => {
-    const convex = getConvexClient();
-    const formData = await event.request.formData();
+    const form = await superValidate(event.request, zod4(formSchema));
 
-    const email = emailSchema.safeParse(formData.get("email"));
-    const password = passwordSchema.safeParse(formData.get("password"));
-
-    if (!email.success) {
-      return fail(400, {
-        success: false,
-        message: "Invalid email",
-        email: email,
-      } as const);
+    if (!form.valid) {
+      return fail(400, { form });
     }
 
-    if (!password.success) {
-      return fail(400, {
-        success: false,
-        message: "Invalid password",
-      } as const);
-    }
+    const { email, password, username } = form.data;
+    const finalizeSession = async (userId: Id<"user">) => {
+      const token = generateSessionToken();
+      const created = await createSession(token, userId);
 
-    let userId;
+      return created.fold(
+        (session) => {
+          setSessionTokenCookie(event, token, session.expiresAt);
+          redirect(303, "/");
+        },
+        (err) => {
+          console.error("Failed to create session", err);
+          error(500, { message: "Failed to create session" });
+        },
+      );
+    };
+
     if (event.params.authtype === "signup") {
-      const username = usernameSchema.safeParse(formData.get("username"));
-      if (!username.success) {
-        return fail(400, {
-          success: false,
-          message: "Invalid username",
-          email: email.data,
-          username: String(formData.get("username") ?? ""),
-        } as const);
+      if (!username) {
+        return setError(form, "username", "Username is required");
       }
 
-      // Enforce unique username
-      const existing = await convex.query(api.user.getUserByUsername, {
-        username: username.data,
-      });
-      if (existing) {
-        return fail(400, {
-          success: false,
-          message: "Username already taken",
-          email: email.data,
-          username: username.data,
-        } as const);
-      }
+      const existingResult = await Result.try(async () =>
+        convex.query(api.user.getUserByUsername, { username }),
+      );
 
-      userId = await convex.mutation(api.user.createUser, {
-        email: email.data,
-        password: password.data,
-        username: username.data,
-      });
-    } else {
-      try {
-        const user = await convex.query(api.user.getUserWithPasswordByEmail, {
-          email: email.data,
-        });
+      return existingResult.fold(
+        async (existing) => {
+          if (existing) {
+            return setError(form, "username", "Username already taken");
+          }
 
+          const createResult = await Result.try(async () =>
+            convex.mutation(api.user.createUser, {
+              email,
+              password,
+              username,
+            }),
+          );
+
+          return createResult.fold(
+            (userId) => finalizeSession(userId),
+            (err) => {
+              console.error("Failed to create user", err);
+              error(500, { message: "Failed to create user" });
+            },
+          );
+        },
+        (err) => {
+          console.error("Failed to verify username uniqueness", err);
+          error(500, { message: "Failed to create user" });
+        },
+      );
+    }
+
+    const userResult = await Result.try(async () =>
+      convex.query(api.user.getUserWithPasswordByEmail, { email }),
+    );
+
+    return userResult.fold(
+      (user) => {
         if (!user) {
-          return fail(400, {
-            message: "User not found",
-            email,
-          });
+          return setError(form, "email", "User not found");
         }
 
-        const validPassword = verifyPasswordHash(user.password, password.data);
+        const validPassword = verifyPasswordHash(user.password, password);
 
         if (!validPassword) {
-          return fail(400, {
-            message: "Invalid password",
-            email,
-          });
+          return setError(form, "password", "Invalid password");
         }
-        userId = user._id;
-      } catch {
-        return fail(400, {
-          message: "User not found",
-          email,
-        });
-      }
-    }
 
-    const token = generateSessionToken();
-    const created = await createSession(token, userId);
-    if (!created.ok) {
-      return fail(500, { message: "Failed to create session" });
-    }
-    const session = created.value;
-
-    setSessionTokenCookie(event, token, session.expiresAt);
-    return redirect(303, "/");
+        return finalizeSession(user._id);
+      },
+      (err) => {
+        console.error("Failed to fetch user", err);
+        error(500, { message: "Failed to sign in" });
+      },
+    );
   },
 } satisfies Actions;
