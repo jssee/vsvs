@@ -140,7 +140,7 @@ export const getBattle = query({
 });
 
 /**
- * Get battles created by a user
+ * Get battles for a user (owner or player)
  */
 export const getMyBattles = query({
   args: { userId: v.id("user") },
@@ -156,11 +156,23 @@ export const getMyBattles = query({
     }),
   ),
   handler: async (ctx, args) => {
-    const battles = await ctx.db
+    // Collect battles where the user is a player
+    const memberships = await ctx.db
+      .query("battlePlayers")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const battleIds = new Set<Id<"battles">>(
+      memberships.map((m) => m.battleId),
+    );
+
+    // Also include battles the user created (in case of legacy data where
+    // the creator might not have a battlePlayers row)
+    const created = await ctx.db
       .query("battles")
       .withIndex("by_creatorId", (q) => q.eq("creatorId", args.userId))
-      .order("desc")
       .collect();
+    for (const b of created) battleIds.add(b._id);
 
     const results = [] as Array<{
       _id: Id<"battles">;
@@ -172,11 +184,14 @@ export const getMyBattles = query({
       currentSessionNumber?: number;
     }>;
 
-    for (const battle of battles) {
+    for (const id of battleIds) {
+      const battle = await ctx.db.get(id);
+      if (!battle) continue;
+
       const playerCount = (
         await ctx.db
           .query("battlePlayers")
-          .withIndex("by_battleId", (q) => q.eq("battleId", battle._id))
+          .withIndex("by_battleId", (q) => q.eq("battleId", id))
           .collect()
       ).length;
 
@@ -196,6 +211,9 @@ export const getMyBattles = query({
         currentSessionNumber,
       });
     }
+
+    // Sort newest first for stable order
+    results.sort((a, b) => b.createdAt - a.createdAt);
 
     return results;
   },
