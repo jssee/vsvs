@@ -18,8 +18,8 @@ const inviteSchema = z.object({
 const addSessionSchema = z.object({
   vibe: z.string().min(1, "Vibe is required").max(100, "Vibe too long"),
   description: z.string().optional(),
-  submissionDeadline: z.string().min(1, "Submission deadline required"),
-  votingDeadline: z.string().min(1, "Voting deadline required"),
+  submissionMs: z.coerce.number(),
+  votingMs: z.coerce.number(),
 });
 
 const submitSongSchema = z.object({
@@ -160,9 +160,13 @@ export const actions = {
     const form = await superValidate(request, zod4(addSessionSchema));
     if (!form.valid) return fail(400, { form });
 
-    const submissionDeadline = Date.parse(form.data.submissionDeadline);
-    const votingDeadline = Date.parse(form.data.votingDeadline);
-    if (Number.isNaN(submissionDeadline) || Number.isNaN(votingDeadline)) {
+    const submissionDeadline = form.data.submissionMs;
+    const votingDeadline = form.data.votingMs;
+
+    if (
+      !Number.isFinite(submissionDeadline) ||
+      !Number.isFinite(votingDeadline)
+    ) {
       return fail(400, { message: "Invalid deadline format" });
     }
     if (votingDeadline <= submissionDeadline) {
@@ -171,22 +175,24 @@ export const actions = {
       });
     }
 
-    const result = Result.try(
-      async () =>
-        await convex.mutation(api.sessions.addSession, {
-          userId: locals.user!._id,
-          battleId: params.id as Id<"battles">,
-          vibe: form.data.vibe,
-          description: form.data.description,
-          submissionDeadline,
-          votingDeadline,
-        }),
-    );
-
-    return result.fold(
-      () => message(form, "Session created successfully"),
-      (err) => error(400, { message: err.message }),
-    );
+    try {
+      const res = await convex.mutation(api.sessions.addSession, {
+        userId: locals.user!._id,
+        battleId: params.id as Id<"battles">,
+        vibe: form.data.vibe,
+        description: form.data.description,
+        submissionDeadline,
+        votingDeadline,
+      });
+      if (!res.success) {
+        return fail(400, { form, message: res.message });
+      }
+      return message(form, "Session created successfully");
+    } catch (err: any) {
+      return error(400, {
+        message: err?.message ?? "Failed to create session",
+      });
+    }
   },
   submitSong: async ({ request, locals }) => {
     if (!locals.user) return fail(401, { message: "Not authenticated" });

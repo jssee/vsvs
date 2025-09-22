@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { validateSpotifyUrl, normalizeSpotifyUrl } from "../utils/spotify-urls";
+import { decideSubmissionOrder } from "../server/utils/submission-logic";
 import type { Id } from "./_generated/dataModel";
 
 /**
@@ -98,23 +99,14 @@ export const submitSong = mutation({
       .collect();
 
     // Determine submission order
-    let submissionOrder: number;
-
-    if (userSubmissions.length === 0) {
-      submissionOrder = 1; // First submission
-    } else if (userSubmissions.length === 1 && battle.doubleSubmissions) {
-      submissionOrder = 2; // Second submission allowed
-    } else if (userSubmissions.length === 1 && !battle.doubleSubmissions) {
-      return {
-        success: false,
-        message: "You have already submitted a song for this session",
-      };
-    } else {
-      return {
-        success: false,
-        message: "You have already submitted the maximum number of songs",
-      };
+    const orderDecision = decideSubmissionOrder(
+      userSubmissions.length,
+      battle.doubleSubmissions,
+    );
+    if (!orderDecision.ok) {
+      return { success: false, message: orderDecision.message };
     }
+    const submissionOrder = orderDecision.order;
 
     // Create submission
     const submissionId = await ctx.db.insert("submissions", {

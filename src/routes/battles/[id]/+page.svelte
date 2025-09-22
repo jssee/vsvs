@@ -75,6 +75,9 @@
 
   export let form: { message?: string } | undefined;
 
+  let submissionMs = 0;
+  let votingMs = 0;
+
   // Client-side validation for Spotify URLs
   const spotifyUrlSchema = z
     .string()
@@ -502,6 +505,8 @@
           <p class="mb-2 text-sm text-red-600">{form.message}</p>
         {/if}
         <form method="post" action="?/addSession" class="grid gap-3">
+          <input type="hidden" name="submissionMs" value={submissionMs} />
+          <input type="hidden" name="votingMs" value={votingMs} />
           <label class="grid gap-1">
             <span class="text-sm">Vibe</span>
             <input name="vibe" class="rounded border px-2 py-1" required />
@@ -514,19 +519,27 @@
             <label class="grid gap-1">
               <span class="text-sm">Submission deadline</span>
               <input
-                name="submissionDeadline"
+                name="submissionLocal"
                 type="datetime-local"
                 class="rounded border px-2 py-1"
                 required
+                on:input={(e) =>
+                  (submissionMs = new Date(
+                    (e.target as HTMLInputElement).value,
+                  ).getTime())}
               />
             </label>
             <label class="grid gap-1">
               <span class="text-sm">Voting deadline</span>
               <input
-                name="votingDeadline"
+                name="votingLocal"
                 type="datetime-local"
                 class="rounded border px-2 py-1"
                 required
+                on:input={(e) =>
+                  (votingMs = new Date(
+                    (e.target as HTMLInputElement).value,
+                  ).getTime())}
               />
             </label>
           </div>
