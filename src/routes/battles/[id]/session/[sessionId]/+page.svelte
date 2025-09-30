@@ -1,5 +1,6 @@
 <script lang="ts">
   import { z } from "zod";
+  import { formatDuration } from "$lib/time";
   export let data: {
     battle: {
       _id: string;
@@ -115,10 +116,7 @@
       <div class="mt-1 text-sm text-gray-700">{data.session.description}</div>
     {/if}
     <div class="mt-1 text-xs text-gray-700">
-      Time remaining: {Math.max(
-        0,
-        Math.floor(data.session.timeRemaining.milliseconds / 60000),
-      )}m
+      Time remaining: {formatDuration(data.session.timeRemaining.milliseconds)}
     </div>
     {#if data.session.playlistUrl}
       <div class="mt-2 text-sm">
