@@ -1,28 +1,9 @@
 <script lang="ts">
-  export let data: {
-    battle: {
-      _id: string;
-      name: string;
-      status: "active" | "completed";
-      creatorId: string;
-      inviteCode: string;
-      playerCount: number;
-      maxPlayers: number;
-      visibility: "public" | "private";
-    };
-    sessions: Array<{
-      _id: string;
-      sessionNumber: number;
-      vibe: string;
-      description?: string;
-      submissionDeadline: number;
-      votingDeadline: number;
-      phase: "pending" | "submission" | "voting" | "completed";
-      playlistUrl?: string;
-      submissionCount: number;
-    }>;
-    user: { _id: string; email: string; username: string } | null;
-  };
+  import type { PageProps } from "./$types";
+
+  const { data, form }: PageProps = $props();
+
+  let invitedEmail = $state("");
 </script>
 
 <div class="mx-auto max-w-3xl space-y-6 p-4">
@@ -41,6 +22,37 @@
         >{data.battle.inviteCode}</code
       >
     </div>
+
+    {#if data.user && data.user._id === data.battle.creatorId && data.battle.status === "active"}
+      <div class="mt-4 rounded bg-gray-50 p-3">
+        <h3 class="mb-2 text-sm font-medium">Send Invitation by Email</h3>
+        {#if form?.message}
+          <p
+            class="mb-2 text-sm"
+            class:text-red-600={!form.success}
+            class:text-green-600={form.success}
+          >
+            {form.message}
+          </p>
+        {/if}
+        <form method="post" action="?/sendInvitation" class="flex gap-2">
+          <input
+            type="email"
+            name="invitedEmail"
+            bind:value={invitedEmail}
+            placeholder="friend@example.com"
+            class="flex-1 rounded border px-3 py-1 text-sm"
+            required
+          />
+          <button
+            type="submit"
+            class="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+          >
+            Send Invite
+          </button>
+        </form>
+      </div>
+    {/if}
   </header>
 
   <section class="space-y-2 rounded border p-4">

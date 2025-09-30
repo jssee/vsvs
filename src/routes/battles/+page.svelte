@@ -3,20 +3,51 @@
   import { api } from "$lib/convex/_generated/api";
   import type { PageProps } from "./$types";
 
-  const { data }: PageProps = $props();
+  const { data, form }: PageProps = $props();
 
   const query = useQuery(
     api.battles.getMyBattles,
     { userId: data.user._id },
     { initialData: data.battles },
   );
+
+  let inviteCode = $state("");
 </script>
 
-<h1 class="text-xl font-semibold">Battles</h1>
-<div class="mb-4">
+<div class="mb-4 flex items-baseline justify-between">
+  <h1 class="text-xl font-semibold">Battles</h1>
+  <a href="/invitations" class="text-sm text-blue-600 underline"
+    >View invitations</a
+  >
+</div>
+<div class="mb-4 flex gap-4">
   <a href="/battles/create" class="text-blue-600 underline">create new battle</a
   >
 </div>
+
+<section class="mb-6 rounded border p-4">
+  <h2 class="mb-3 font-medium">Join a Battle</h2>
+  <form method="post" action="?/joinByCode" class="flex gap-2">
+    {#if form?.message}
+      <p class="w-full text-sm text-red-600">{form.message}</p>
+    {/if}
+    <input
+      type="text"
+      name="inviteCode"
+      bind:value={inviteCode}
+      placeholder="Enter invite code (e.g., ABC123)"
+      class="flex-1 rounded border px-3 py-2 uppercase"
+      maxlength="6"
+      required
+    />
+    <button
+      type="submit"
+      class="rounded bg-black px-4 py-2 text-white hover:bg-gray-800"
+    >
+      Join
+    </button>
+  </form>
+</section>
 
 <section class="rounded border p-4">
   <h2 class="mb-3 font-medium">My Battles</h2>
