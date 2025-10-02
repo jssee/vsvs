@@ -123,9 +123,7 @@ export const actions: Actions = {
         .when(BattleInactiveError, (error) =>
           fail(400, { message: error.message }),
         )
-        .when(BattleFullError, (error) =>
-          fail(400, { message: error.message }),
-        )
+        .when(BattleFullError, (error) => fail(400, { message: error.message }))
         .run();
     }
 

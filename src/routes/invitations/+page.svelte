@@ -26,7 +26,8 @@
 <div class="mx-auto max-w-3xl space-y-6 p-4">
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-semibold">Invitations</h1>
-    <a href="/battles" class="text-sm text-blue-700 underline">← Back to battles</a
+    <a href="/battles" class="text-sm text-blue-700 underline"
+      >← Back to battles</a
     >
   </div>
 

@@ -32,10 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 /**
  * Joins a battle using an invite code
  */
-async function joinBattleByInviteCode(
-  inviteCode: string,
-  userId: Id<"user">,
-) {
+async function joinBattleByInviteCode(inviteCode: string, userId: Id<"user">) {
   const response = await convex.mutation(api.players.joinBattleByCode, {
     inviteCode,
     userId,

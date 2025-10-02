@@ -1,49 +1,9 @@
 <script lang="ts">
   import { z } from "zod";
   import { formatDuration } from "$lib/time";
-  export let data: {
-    battle: {
-      _id: string;
-      creatorId: string;
-      name: string;
-    };
-    session: {
-      _id: string;
-      sessionNumber: number;
-      vibe: string;
-      description?: string;
-      submissionDeadline: number;
-      votingDeadline: number;
-      phase: "pending" | "submission" | "voting" | "completed";
-      playlistUrl?: string;
-      timeRemaining: { phase: string; milliseconds: number; expired: boolean };
-    };
-    sessionSubmissions: Array<{
-      _id: string;
-      userId: string;
-      username: string;
-      spotifyUrl: string;
-      submissionOrder: number;
-      submittedAt: number;
-      starsReceived: number;
-      isCurrentUser: boolean;
-    }>;
-    mySubmissions: Array<{
-      _id: string;
-      spotifyUrl: string;
-      submissionOrder: number;
-      submittedAt: number;
-      starsReceived: number;
-    }>;
-    votingState: null | {
-      starsRemaining: number;
-      votedSubmissions: string[];
-      canVote: boolean;
-    };
-    user: { _id: string; email: string; username: string } | null;
-  };
+  import type { PageProps } from "./$types";
 
-  export let form: { message?: string; playlistUrl?: string } | undefined;
+  let { data, form }: PageProps = $props();
 
   const spotifyUrlSchema = z
     .string()
@@ -55,8 +15,8 @@
       { message: "Must be a Spotify track URL" },
     );
 
-  let submitUrl = "";
-  let submitError = "";
+  let submitUrl = $state("");
+  let submitError = $state("");
   function validateSubmitSong(e: SubmitEvent) {
     submitError = "";
     const formEl = e.currentTarget as HTMLFormElement;
@@ -70,9 +30,9 @@
     }
   }
 
-  let editing: Record<string, boolean> = {};
-  let editValues: Record<string, string> = {};
-  let editErrors: Record<string, string> = {};
+  let editing: Record<string, boolean> = $state({});
+  let editValues: Record<string, string> = $state({});
+  let editErrors: Record<string, string> = $state({});
   function startEdit(id: string, currentUrl: string) {
     editing[id] = true;
     editValues[id] = currentUrl;
@@ -156,7 +116,7 @@
           method="post"
           action="?/submitSong"
           class="grid gap-2"
-          on:submit={validateSubmitSong}
+          onsubmit={validateSubmitSong}
         >
           {#if form?.message}
             <p class="text-sm text-red-600">{form.message}</p>
@@ -205,7 +165,7 @@
                           <button
                             class="text-xs underline"
                             type="button"
-                            on:click={() => startEdit(s._id, s.spotifyUrl)}
+                            onclick={() => startEdit(s._id, s.spotifyUrl)}
                             >Edit</button
                           >
                           <form method="post" action="?/removeSubmission">
@@ -226,7 +186,7 @@
                         method="post"
                         action="?/updateSubmission"
                         class="grid gap-1"
-                        on:submit={validateEditSubmit}
+                        onsubmit={validateEditSubmit}
                       >
                         {#if editErrors[s._id]}
                           <span class="text-xs text-red-600"
@@ -251,7 +211,7 @@
                           <button
                             class="text-xs underline"
                             type="button"
-                            on:click={() => cancelEdit(s._id)}>Cancel</button
+                            onclick={() => cancelEdit(s._id)}>Cancel</button
                           >
                         </div>
                       </form>

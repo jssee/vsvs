@@ -8,8 +8,11 @@ export abstract class TaggedError<const Tag extends string> extends Error {
 }
 
 export class AuthSessionCreationError extends TaggedError<"AuthSessionCreationError"> {
-  constructor() {
+  constructor(options?: ErrorOptions) {
     super("Failed to create sessions");
+    if (options?.cause) {
+      this.cause = options.cause;
+    }
   }
 }
 

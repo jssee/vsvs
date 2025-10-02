@@ -1,8 +1,9 @@
 <script lang="ts">
   import { Field, Control, Label, Description, FieldErrors } from "formsnap";
   import { superForm } from "sveltekit-superforms";
+  import type { PageProps } from "./$types";
 
-  export let data: { battle: { _id: string; name: string }; form: any };
+  let { data }: PageProps = $props();
   const form = superForm(data.form);
   let { form: formData, enhance, message, allErrors } = form;
 </script>
