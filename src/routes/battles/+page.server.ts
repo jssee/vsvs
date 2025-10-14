@@ -5,7 +5,6 @@ import { api } from "$lib/convex/_generated/api";
 import type { PageServerLoad, Actions } from "./$types";
 import type { Id } from "$lib/convex/_generated/dataModel";
 import {
-  UnauthenticatedError,
   InviteCodeNotFoundError,
   BattleFullError,
   BattleInactiveError,

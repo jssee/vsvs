@@ -1,4 +1,4 @@
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -164,7 +164,12 @@ export const updateSession = mutation({
     }
 
     // Update session
-    const updates: any = {};
+    const updates: Partial<{
+      vibe: string;
+      description: string;
+      submissionDeadline: number;
+      votingDeadline: number;
+    }> = {};
     if (args.vibe !== undefined) updates.vibe = args.vibe;
     if (args.description !== undefined) updates.description = args.description;
     if (args.submissionDeadline !== undefined)

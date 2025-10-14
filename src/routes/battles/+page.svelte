@@ -59,7 +59,7 @@
     <p class="text-sm text-gray-600">You have no battles.</p>
   {:else}
     <ul class="space-y-2">
-      {#each query.data as battle}
+      {#each query.data as battle (battle._id)}
         <li class="flex items-center justify-between rounded border p-3">
           <a
             class="font-medium hover:underline"

@@ -16,7 +16,7 @@
 
   {#if $allErrors.length}
     <ul class="mb-2 text-red-400">
-      {#each $allErrors as error}
+      {#each $allErrors as error (error.path)}
         <li>
           <b>{error.path}:</b>
           {error.messages.join(". ")}

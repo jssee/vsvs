@@ -55,7 +55,7 @@ export const getSessionWithUser = query({
     }
 
     // Remove password from user data
-    const { password, ...userPublic } = user;
+    const { password: _password, ...userPublic } = user;
     return { session, user: userPublic };
   },
 });

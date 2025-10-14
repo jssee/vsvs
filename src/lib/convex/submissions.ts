@@ -374,8 +374,12 @@ export const getSessionSubmissionStats = query({
     const userSubmissions = new Map<
       Id<"user">,
       {
-        user: any;
-        submissions: any[];
+        user: { _id: Id<"user">; username: string } | null;
+        submissions: Array<{
+          _id: Id<"submissions">;
+          submissionOrder: number;
+          submittedAt: number;
+        }>;
       }
     >();
 
@@ -385,7 +389,7 @@ export const getSessionSubmissionStats = query({
       if (!userSubmissions.has(userId)) {
         const user = await ctx.db.get(userId);
         userSubmissions.set(userId, {
-          user,
+          user: user ? { _id: user._id, username: user.username } : null,
           submissions: [],
         });
       }

@@ -1,7 +1,6 @@
 import { genSaltSync, hashSync } from "bcrypt-ts";
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { Result } from "typescript-result";
 
 import { EmailAlreadyInUseError, UsernameAlreadyTakenError } from "../errors";
 
@@ -18,7 +17,7 @@ export const get = query({
   handler: async (ctx) => {
     const users = await ctx.db.query("user").collect();
     // Remove password from public user data
-    return users.map(({ password, ...userPublic }) => userPublic);
+    return users.map(({ password: _password, ...userPublic }) => userPublic);
   },
 });
 
@@ -46,7 +45,7 @@ export const getUserByEmail = query({
     }
 
     // Remove password from public user data
-    const { password, ...userPublic } = user;
+    const { password: _password, ...userPublic } = user;
     return userPublic;
   },
 });
@@ -74,7 +73,7 @@ export const getUserByUsername = query({
       return null;
     }
 
-    const { password, ...userPublic } = user;
+    const { password: _password, ...userPublic } = user;
     return userPublic;
   },
 });
@@ -175,7 +174,7 @@ export const getUserById = query({
     }
 
     // Remove password from public user data
-    const { password, ...userPublic } = user;
+    const { password: _password, ...userPublic } = user;
     return userPublic;
   },
 });

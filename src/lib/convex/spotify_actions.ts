@@ -1,11 +1,13 @@
 "use node";
 
-import { internalAction, action } from "./_generated/server";
+import { internalAction, action, type ActionCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
 // Avoid Node types dependency in TS
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const process: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Buffer: any;
 
 // Internal: Generate Spotify playlist for a session
@@ -38,8 +40,8 @@ export const generateSessionPlaylist = internalAction({
         return null;
 
       const trackUris = session.submissions
-        .sort((a: any, b: any) => b.starsReceived - a.starsReceived)
-        .map((sub: any) => spotifyUrlToUri(sub.spotifyUrl))
+        .sort((a, b) => b.starsReceived - a.starsReceived)
+        .map((sub) => spotifyUrlToUri(sub.spotifyUrl))
         .filter((uri: string | null): uri is string => !!uri);
 
       if (trackUris.length > 0) {
@@ -97,8 +99,8 @@ export const generatePlaylistNow = action({
       return { success: false, message: "Failed to create playlist" };
     }
     const trackUris = session.submissions
-      .sort((a: any, b: any) => b.starsReceived - a.starsReceived)
-      .map((sub: any) => spotifyUrlToUri(sub.spotifyUrl))
+      .sort((a, b) => b.starsReceived - a.starsReceived)
+      .map((sub) => spotifyUrlToUri(sub.spotifyUrl))
       .filter((uri: string | null): uri is string => !!uri);
     if (trackUris.length > 0) {
       await addTracksToPlaylist(
@@ -165,7 +167,7 @@ export const fetchTrackMetadata = internalAction({
       const meta = {
         trackId,
         name: t.name,
-        artists: (t.artists || []).map((a: any) => a.name),
+        artists: (t.artists || []).map((a: { name: string }) => a.name),
         album: t.album?.name ?? "",
         imageUrl: t.album?.images?.[0]?.url,
         previewUrl: t.preview_url ?? undefined,
@@ -181,8 +183,8 @@ export const fetchTrackMetadata = internalAction({
 });
 
 // Helpers
-async function getValidSpotifyToken(ctx: any): Promise<string | null> {
-  let auth = await ctx.runQuery(internal.spotify.getSpotifyAuth, {} as any);
+async function getValidSpotifyToken(ctx: ActionCtx): Promise<string | null> {
+  let auth = await ctx.runQuery(internal.spotify.getSpotifyAuth, {});
   // Fallback: seed from Convex env vars if missing
   if (!auth) {
     const envAccess = process?.env?.SPOTIFY_ACCESS_TOKEN as string | undefined;
@@ -222,7 +224,7 @@ async function getValidSpotifyToken(ctx: any): Promise<string | null> {
         accessToken: envAccess,
         refreshToken: envRefresh ?? "",
         expiresAt: fallbackExpiry,
-      } as any;
+      };
     }
   }
   if (!auth) return null;

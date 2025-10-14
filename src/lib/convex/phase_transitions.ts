@@ -1,6 +1,7 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Check and advance session phases (called by cron job)
@@ -75,20 +76,20 @@ export const checkPhaseTransitions = internalMutation({
  * Placeholder until the voting system exists; returns false to rely on deadlines.
  */
 async function checkAllPlayersVoted(
-  ctx: any,
-  sessionId: string,
+  ctx: MutationCtx,
+  sessionId: Id<"vsSessions">,
 ): Promise<boolean> {
   const session = await ctx.db.get(sessionId);
   if (!session) return false;
   const players = await ctx.db
     .query("battlePlayers")
-    .withIndex("by_battleId", (q: any) => q.eq("battleId", session.battleId))
+    .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
     .collect();
   if (players.length === 0) return false;
   for (const p of players) {
     const stars = await ctx.db
       .query("stars")
-      .withIndex("by_session_and_voter", (q: any) =>
+      .withIndex("by_session_and_voter", (q) =>
         q.eq("sessionId", sessionId).eq("voterId", p.userId),
       )
       .collect();
@@ -167,7 +168,7 @@ export const calculateSessionWinner = internalMutation({
       .collect();
 
     const userTotals = new Map<
-      string,
+      Id<"user">,
       { totalStars: number; submissionIds: string[] }
     >();
     for (const sub of submissions) {
@@ -183,7 +184,7 @@ export const calculateSessionWinner = internalMutation({
       const player = await ctx.db
         .query("battlePlayers")
         .withIndex("by_battle_and_user", (q) =>
-          q.eq("battleId", session.battleId).eq("userId", userId as any),
+          q.eq("battleId", session.battleId).eq("userId", userId),
         )
         .first();
       if (player) {
@@ -205,7 +206,7 @@ export const calculateSessionWinner = internalMutation({
       const player = await ctx.db
         .query("battlePlayers")
         .withIndex("by_battle_and_user", (q) =>
-          q.eq("battleId", session.battleId).eq("userId", userId as any),
+          q.eq("battleId", session.battleId).eq("userId", userId),
         )
         .first();
       if (player) {
@@ -225,17 +226,14 @@ export const calculateBattleChampion = internalMutation({
   args: { battleId: v.id("battles") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const players = await ctx.db
+    const _players = await ctx.db
       .query("battlePlayers")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 
-    // Find player(s) with most total stars
-    const maxStars =
-      players.length > 0
-        ? Math.max(...players.map((p) => p.totalStarsEarned))
-        : 0;
-    const _champions = players.filter((p) => p.totalStarsEarned === maxStars);
+    // Find player(s) with most total stars - future enhancement
+    // const maxStars = _players.length > 0 ? Math.max(..._players.map((p) => p.totalStarsEarned)) : 0;
+    // const champions = _players.filter((p) => p.totalStarsEarned === maxStars);
     // Could patch battle or players; left as future enhancement
     return null;
   },

@@ -76,7 +76,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   // Compute time remaining similar to getCurrentSession
   const now = Date.now();
   let timeRemaining: { phase: string; milliseconds: number; expired: boolean } =
-    { phase: session.phase, milliseconds: 0, expired: false } as any;
+    { phase: session.phase, milliseconds: 0, expired: false };
   if (session.phase === "submission") {
     timeRemaining = {
       phase: "submission",
@@ -101,7 +101,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     },
   );
 
-  let mySubmissions: Array<any> = [];
+  type MySubmissionsType = Awaited<
+    ReturnType<
+      typeof convex.query<typeof api.submissions.getMySessionSubmissions>
+    >
+  >;
+  let mySubmissions: MySubmissionsType = [];
   let votingState: null | {
     starsRemaining: number;
     votedSubmissions: string[];
