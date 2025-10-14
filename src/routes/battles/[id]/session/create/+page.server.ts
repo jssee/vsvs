@@ -4,12 +4,10 @@ import { superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { Result } from "typescript-result";
 
-import { getConvexClient } from "$lib/convex-client";
+import { requireAuth } from "$lib/server/auth-helpers";
 import { api } from "$lib/convex/_generated/api";
 import type { Actions, PageServerLoad } from "./$types";
 import type { Id } from "$lib/convex/_generated/dataModel";
-
-const convex = getConvexClient();
 
 const formSchema = z.object({
   vibe: z.string().min(1, "Vibe is required").max(100, "Vibe too long"),
@@ -18,14 +16,13 @@ const formSchema = z.object({
   votingLocal: z.string().min(1, "Voting deadline required"),
 });
 
-export const load: PageServerLoad = async ({ locals, params }) => {
-  if (!locals.session || !locals.user) {
-    redirect(302, "/signin");
-  }
+export const load: PageServerLoad = async (event) => {
+  const { params } = event;
+  const { client, user } = await requireAuth(event);
 
-  const battle = await convex.query(api.battles.getBattle, {
+  const battle = await client.query(api.battles.getBattle, {
     battleId: params.id as Id<"battles">,
-    userId: locals.user?._id,
+    userId: user._id,
   });
   if (!battle) throw error(404, "Battle not found");
 
@@ -36,8 +33,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 };
 
 export const actions = {
-  createSession: async ({ request, locals, params }) => {
-    if (!locals.user) return fail(401, { message: "Not authenticated" });
+  createSession: async (event) => {
+    const { request, params } = event;
+    const { client, user } = await requireAuth(event);
 
     const form = await superValidate(request, zod4(formSchema));
     if (!form.valid) return fail(400, { form });
@@ -59,8 +57,8 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await convex.mutation(api.sessions.addSession, {
-          userId: locals.user!._id,
+        await client.mutation(api.sessions.addSession, {
+          userId: user._id,
           battleId: params.id as Id<"battles">,
           vibe: form.data.vibe,
           description: form.data.description,

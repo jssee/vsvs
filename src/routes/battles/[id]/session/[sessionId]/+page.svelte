@@ -94,9 +94,6 @@
           type="submit">Generate Playlist Now</button
         >
       </form>
-      {#if form?.message}
-        <div class="mt-1 text-xs text-red-600">{form.message}</div>
-      {/if}
       {#if form?.playlistUrl}
         <div class="mt-2 text-sm">
           Generated Playlist:
@@ -118,9 +115,6 @@
           class="grid gap-2"
           onsubmit={validateSubmitSong}
         >
-          {#if form?.message}
-            <p class="text-sm text-red-600">{form.message}</p>
-          {/if}
           {#if submitError}
             <p class="text-sm text-red-600">{submitError}</p>
           {/if}
@@ -254,9 +248,6 @@
         <div class="text-sm">
           Stars remaining: {data.votingState?.starsRemaining ?? 0}
         </div>
-        {#if form?.message}
-          <p class="text-sm text-red-600">{form.message}</p>
-        {/if}
         <div>
           <h3 class="mb-2 font-medium">Submissions</h3>
           {#if data.sessionSubmissions.length === 0}

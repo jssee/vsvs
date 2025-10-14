@@ -1,6 +1,5 @@
 import { redirect, fail } from "@sveltejs/kit";
 import { Result } from "typescript-result";
-import { getConvexClient } from "$lib/convex-client";
 import { api } from "$lib/convex/_generated/api";
 import type { PageServerLoad, Actions } from "./$types";
 import type { Id } from "$lib/convex/_generated/dataModel";
@@ -10,29 +9,30 @@ import {
   BattleInactiveError,
   AlreadyInBattleError,
 } from "$lib/errors";
+import { requireAuth } from "$lib/server/auth-helpers";
 
-const convex = getConvexClient();
+export const load: PageServerLoad = async (event) => {
+  const { client, user } = await requireAuth(event);
 
-export const load: PageServerLoad = async ({ locals }) => {
-  if (!locals.session || !locals.user) {
-    redirect(302, "/signin");
-  }
-
-  const battles = await convex.query(api.battles.getMyBattles, {
-    userId: locals.user._id,
+  const battles = await client.query(api.battles.getMyBattles, {
+    userId: user._id,
   });
 
   return {
     battles,
-    user: locals.user,
+    user,
   };
 };
 
 /**
  * Joins a battle using an invite code
  */
-async function joinBattleByInviteCode(inviteCode: string, userId: Id<"user">) {
-  const response = await convex.mutation(api.players.joinBattleByCode, {
+async function joinBattleByInviteCode(
+  client: any,
+  inviteCode: string,
+  userId: Id<"user">,
+) {
+  const response = await client.mutation(api.players.joinBattleByCode, {
     inviteCode,
     userId,
   });
@@ -60,19 +60,17 @@ async function joinBattleByInviteCode(inviteCode: string, userId: Id<"user">) {
 }
 
 export const actions: Actions = {
-  joinByCode: async ({ locals, request }) => {
-    if (!locals.session || !locals.user) {
-      return fail(401, { message: "Not authenticated" });
-    }
+  joinByCode: async (event) => {
+    const { client, user } = await requireAuth(event);
 
-    const formData = await request.formData();
+    const formData = await event.request.formData();
     const inviteCode = formData.get("inviteCode")?.toString().trim();
 
     if (!inviteCode) {
       return fail(400, { message: "Invite code is required" });
     }
 
-    const result = await joinBattleByInviteCode(inviteCode, locals.user._id);
+    const result = await joinBattleByInviteCode(client, inviteCode, user._id);
 
     if (!result.ok) {
       return result

@@ -1,9 +1,10 @@
 import { redirect, fail } from "@sveltejs/kit";
 import { Result } from "typescript-result";
-import { getConvexClient } from "$lib/convex-client";
+import { requireAuth } from "$lib/server/auth-helpers";
 import { api } from "$lib/convex/_generated/api";
 import type { PageServerLoad, Actions } from "./$types";
 import type { Id } from "$lib/convex/_generated/dataModel";
+import type { ConvexHttpClient } from "convex/browser";
 import {
   InvitationNotFoundError,
   NotAuthorizedError,
@@ -11,23 +12,17 @@ import {
   BattleFullError,
 } from "$lib/errors";
 
-const convex = getConvexClient();
+export const load: PageServerLoad = async (event) => {
+  const { client, user } = await requireAuth(event);
 
-export const load: PageServerLoad = async ({ locals }) => {
-  if (!locals.session || !locals.user) {
-    redirect(302, "/signin");
-  }
-
-  const user = locals.user;
-
-  const invitations = await convex.query(api.invitations.getMyInvitations, {
+  const invitations = await client.query(api.invitations.getMyInvitations, {
     userId: user._id,
   });
 
   // Fetch battle names for each invitation
   const invitationsWithBattles = await Promise.all(
     invitations.map(async (inv) => {
-      const battle = await convex.query(api.battles.getBattle, {
+      const battle = await client.query(api.battles.getBattle, {
         battleId: inv.battleId,
         userId: user._id,
       });
@@ -48,11 +43,12 @@ export const load: PageServerLoad = async ({ locals }) => {
  * Responds to an invitation (accept or decline)
  */
 async function respondToInvitation(
+  client: ConvexHttpClient,
   userId: Id<"user">,
   invitationId: Id<"invitations">,
   response: "accepted" | "declined",
 ) {
-  const apiResponse = await convex.mutation(
+  const apiResponse = await client.mutation(
     api.invitations.respondToInvitation,
     {
       userId,
@@ -88,10 +84,9 @@ async function respondToInvitation(
 }
 
 export const actions: Actions = {
-  respond: async ({ locals, request }) => {
-    if (!locals.session || !locals.user) {
-      return fail(401, { message: "Not authenticated" });
-    }
+  respond: async (event) => {
+    const { request } = event;
+    const { client, user } = await requireAuth(event);
 
     const formData = await request.formData();
     const invitationId = formData.get("invitationId")?.toString();
@@ -106,7 +101,8 @@ export const actions: Actions = {
     }
 
     const result = await respondToInvitation(
-      locals.user._id,
+      client,
+      user._id,
       invitationId as Id<"invitations">,
       response as "accepted" | "declined",
     );

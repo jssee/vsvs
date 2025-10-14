@@ -1,9 +1,10 @@
 import { error, fail } from "@sveltejs/kit";
 import { Result } from "typescript-result";
-import { getConvexClient } from "$lib/convex-client";
+import { getAuth, requireAuth } from "$lib/server/auth-helpers";
 import { api } from "$lib/convex/_generated/api";
 import type { Id } from "$lib/convex/_generated/dataModel";
 import type { PageServerLoad, Actions } from "./$types";
+import type { ConvexHttpClient } from "convex/browser";
 import {
   InvalidEmailError,
   InvitationAlreadySentError,
@@ -12,24 +13,29 @@ import {
   AlreadyInBattleError,
 } from "$lib/errors";
 
-const convex = getConvexClient();
+export const load: PageServerLoad = async (event) => {
+  const { params } = event;
+  const { client, user } = await getAuth(event);
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+  // Create an unauthenticated client if needed
+  const convexClient =
+    client || (await import("$lib/convex-client")).getConvexClient();
+
   const battleId = params.id as Id<"battles">;
-  const battle = await convex.query(api.battles.getBattle, {
+  const battle = await convexClient.query(api.battles.getBattle, {
     battleId,
-    userId: locals.user?._id,
+    userId: user?._id,
   });
   if (!battle) throw error(404, "Battle not found");
 
-  const sessions = await convex.query(api.sessions.getBattleSessions, {
+  const sessions = await convexClient.query(api.sessions.getBattleSessions, {
     battleId,
   });
 
   return {
     battle,
     sessions,
-    user: locals.user,
+    user,
   };
 };
 
@@ -37,6 +43,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
  * Sends an invitation to join a battle via email
  */
 async function sendBattleInvitation(
+  client: ConvexHttpClient,
   userId: Id<"user">,
   battleId: Id<"battles">,
   invitedEmail: string,
@@ -46,7 +53,7 @@ async function sendBattleInvitation(
     return Result.error(new InvalidEmailError());
   }
 
-  const response = await convex.mutation(api.invitations.sendInvitation, {
+  const response = await client.mutation(api.invitations.sendInvitation, {
     userId,
     battleId,
     invitedEmail,
@@ -76,10 +83,9 @@ async function sendBattleInvitation(
 }
 
 export const actions: Actions = {
-  sendInvitation: async ({ locals, request, params }) => {
-    if (!locals.session || !locals.user) {
-      return fail(401, { message: "Not authenticated" });
-    }
+  sendInvitation: async (event) => {
+    const { request, params } = event;
+    const { client, user } = await requireAuth(event);
 
     const formData = await request.formData();
     const invitedEmail = formData.get("invitedEmail")?.toString().trim();
@@ -90,7 +96,8 @@ export const actions: Actions = {
     }
 
     const result = await sendBattleInvitation(
-      locals.user._id,
+      client,
+      user._id,
       battleId,
       invitedEmail,
     );

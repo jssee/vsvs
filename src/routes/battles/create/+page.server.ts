@@ -4,11 +4,9 @@ import { superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { Result } from "typescript-result";
 
-import { getConvexClient } from "$lib/convex-client";
 import { api } from "$lib/convex/_generated/api";
 import type { Actions, PageServerLoad } from "./$types";
-
-const convex = getConvexClient();
+import { requireAuth } from "$lib/server/auth-helpers";
 
 const formSchema = z.object({
   name: z.string("Must be between 3 and 20 characters").min(3).max(20),
@@ -17,20 +15,19 @@ const formSchema = z.object({
   maxPlayers: z.number().positive().default(4),
 });
 
-export const load: PageServerLoad = async ({ locals }) => {
-  if (!locals.session || !locals.user) {
-    redirect(302, "/signin");
-  }
+export const load: PageServerLoad = async (event) => {
+  const { user } = await requireAuth(event);
 
   return {
-    user: locals.user,
+    user,
     form: await superValidate(zod4(formSchema)),
   };
 };
 
 export const actions = {
-  createBattle: async ({ request, locals }) => {
-    const form = await superValidate(request, zod4(formSchema));
+  createBattle: async (event) => {
+    const { client, user } = await requireAuth(event);
+    const form = await superValidate(event.request, zod4(formSchema));
 
     if (!form.valid) return fail(400, { form });
 
@@ -38,8 +35,8 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await convex.mutation(api.battles.createBattle, {
-          userId: locals.user!._id,
+        await client.mutation(api.battles.createBattle, {
+          userId: user._id,
           name,
           visibility,
           maxPlayers,
