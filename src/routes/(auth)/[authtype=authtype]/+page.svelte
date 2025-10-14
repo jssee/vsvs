@@ -1,18 +1,176 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { Field, Control, Label, Description, FieldErrors } from "formsnap";
+  import { goto } from "$app/navigation";
+  import { authClient } from "$lib/auth-client";
   import SubmitButton from "$lib/components/submit-button.svelte";
-  import { superForm } from "sveltekit-superforms";
 
   import type { PageProps } from "./$types";
 
   const { data }: PageProps = $props();
-  const form = superForm(data.form);
-  let { form: formData, enhance, message, allErrors, submitting } = form;
 
-  const signInSignUp = $derived(
-    page.params.authtype === "signup" ? "Sign up" : "Sign in",
-  );
+  let email = $state("");
+  let password = $state("");
+  let username = $state("");
+  let isSubmitting = $state(false);
+  let errorMessage = $state("");
+  let fieldErrors = $state<{
+    email?: string;
+    password?: string;
+    username?: string;
+  }>({});
+
+  const isSignUp = $derived(page.params.authtype === "signup");
+  const signInSignUp = $derived(isSignUp ? "Sign up" : "Sign in");
+
+  function validateForm() {
+    fieldErrors = {};
+    let isValid = true;
+
+    // Email validation
+    if (!email) {
+      fieldErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      fieldErrors.email = "Enter a valid email address";
+      isValid = false;
+    }
+
+    // Password validation
+    if (!password) {
+      fieldErrors.password = "Password is required";
+      isValid = false;
+    } else if (password.length < 8) {
+      fieldErrors.password = "Password must be at least 8 characters long";
+      isValid = false;
+    }
+
+    // Username validation for signup
+    if (isSignUp) {
+      if (!username) {
+        fieldErrors.username = "Username is required";
+        isValid = false;
+      } else if (username.length < 3 || username.length > 30) {
+        fieldErrors.username = "Username must be between 3 and 30 characters";
+        isValid = false;
+      } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        fieldErrors.username =
+          "Username can only contain letters, numbers, and underscores";
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    isSubmitting = true;
+    errorMessage = "";
+    fieldErrors = {};
+
+    try {
+      if (isSignUp) {
+        try {
+          const response = await fetch("/api/auth/check-username", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({ username }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            const message =
+              typeof data?.message === "string"
+                ? data.message
+                : "Failed to validate username";
+
+            if (response.status === 409) {
+              fieldErrors.username = message;
+            }
+
+            errorMessage = message;
+            return;
+          }
+        } catch (validationError) {
+          console.error("Username validation error:", validationError);
+          errorMessage = "Failed to validate username. Please try again.";
+          return;
+        }
+
+        const { error } = await authClient.signUp.email({
+          email,
+          password,
+          name: username,
+        });
+
+        if (error) {
+          errorMessage = error.message || "Failed to sign up";
+          if (error.message?.toLowerCase().includes("email")) {
+            fieldErrors.email = error.message;
+          } else if (error.message?.toLowerCase().includes("username")) {
+            fieldErrors.username = error.message;
+          }
+        } else {
+          try {
+            const syncResponse = await fetch("/api/auth/sync", {
+              method: "POST",
+            });
+
+            if (!syncResponse.ok) {
+              const data = await syncResponse.json().catch(() => ({}));
+              const message =
+                typeof data?.message === "string"
+                  ? data.message
+                  : "Failed to complete signup";
+
+              if (syncResponse.status === 409) {
+                fieldErrors.username = message;
+              }
+
+              errorMessage = message;
+              return;
+            }
+          } catch (syncError) {
+            console.error("Signup sync error:", syncError);
+            errorMessage = "Failed to complete signup. Please try again.";
+            return;
+          }
+
+          // Successful signup - redirect to battles
+          goto("/battles");
+        }
+      } else {
+        const { error } = await authClient.signIn.email({
+          email,
+          password,
+        });
+
+        if (error) {
+          errorMessage = error.message || "Failed to sign in";
+          if (error.message?.toLowerCase().includes("email")) {
+            fieldErrors.email = error.message;
+          } else if (error.message?.toLowerCase().includes("password")) {
+            fieldErrors.password = error.message;
+          }
+        } else {
+          // Successful signin - redirect to trigger server-side sync
+          goto("/battles");
+        }
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      errorMessage = "An unexpected error occurred. Please try again.";
+    } finally {
+      isSubmitting = false;
+    }
+  }
 </script>
 
 <div
@@ -28,89 +186,77 @@
       </p>
     </div>
     <form
-      method="post"
-      use:enhance
+      onsubmit={handleSubmit}
       class="flex flex-col gap-2 px-4 pb-12 sm:px-16"
       autocomplete="on"
     >
-      {#if $message}
-        <span class="text-sm text-emerald-500">{$message}</span>
+      {#if errorMessage}
+        <div
+          class="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+        >
+          {errorMessage}
+        </div>
       {/if}
 
-      {#if $allErrors.length}
-        <ul class="space-y-1 text-sm text-red-500">
-          {#each $allErrors as error, index (error.path + index)}
-            <li>
-              <b>{error.path}:</b>
-              {error.messages.join(". ")}
-            </li>
-          {/each}
-        </ul>
+      {#if isSignUp}
+        <div class="flex flex-col gap-1">
+          <label for="username" class="text-sm font-medium">Username</label>
+          <input
+            id="username"
+            type="text"
+            placeholder="yourname"
+            bind:value={username}
+            autocomplete="username"
+            required
+            class:border-red-500={fieldErrors.username}
+          />
+          {#if fieldErrors.username}
+            <span class="text-xs text-red-500">{fieldErrors.username}</span>
+          {:else}
+            <span class="text-xs text-gray-500">
+              Letters, numbers, and underscores only
+            </span>
+          {/if}
+        </div>
       {/if}
 
-      {#if page.params.authtype === "signup"}
-        <Field {form} name="username">
-          <Control>
-            {#snippet children({ props })}
-              <Label class="text-sm font-medium">Username</Label>
-              <input
-                {...props}
-                type="text"
-                placeholder="yourname"
-                bind:value={$formData.username}
-                autocomplete="username"
-                required
-              />
-              <Description class="text-xs text-gray-500">
-                Letters, numbers, and underscores only
-              </Description>
-            {/snippet}
-          </Control>
-          <FieldErrors class="text-xs text-red-500" />
-        </Field>
-      {/if}
+      <div class="flex flex-col gap-1">
+        <label for="email" class="text-sm font-medium">Email Address</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="user@acme.com"
+          bind:value={email}
+          autocomplete="email"
+          required
+          class:border-red-500={fieldErrors.email}
+        />
+        {#if fieldErrors.email}
+          <span class="text-xs text-red-500">{fieldErrors.email}</span>
+        {/if}
+      </div>
 
-      <Field {form} name="email">
-        <Control>
-          {#snippet children({ props })}
-            <Label class="text-sm font-medium">Email Address</Label>
-            <input
-              {...props}
-              type="email"
-              placeholder="user@acme.com"
-              bind:value={$formData.email}
-              autocomplete="email"
-              required
-            />
-          {/snippet}
-        </Control>
-        <FieldErrors class="text-xs text-red-500" />
-      </Field>
+      <div class="flex flex-col gap-1">
+        <label for="password" class="text-sm font-medium">Password</label>
+        <input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          bind:value={password}
+          autocomplete={isSignUp ? "new-password" : "current-password"}
+          required
+          class:border-red-500={fieldErrors.password}
+        />
+        {#if fieldErrors.password}
+          <span class="text-xs text-red-500">{fieldErrors.password}</span>
+        {/if}
+      </div>
 
-      <Field {form} name="password">
-        <Control>
-          {#snippet children({ props })}
-            <Label class="text-sm font-medium">Password</Label>
-            <input
-              {...props}
-              type="password"
-              placeholder="••••••••"
-              bind:value={$formData.password}
-              autocomplete={page.params.authtype === "signup"
-                ? "new-password"
-                : "current-password"}
-              required
-            />
-          {/snippet}
-        </Control>
-        <FieldErrors class="text-xs text-red-500" />
-      </Field>
-
-      <SubmitButton pending={$submitting} success={!$submitting && !!$message}>
+      <SubmitButton pending={isSubmitting} success={false}>
         {signInSignUp}
       </SubmitButton>
 
-      {#if page.params.authtype === "signup"}
+      {#if isSignUp}
         {@render switchAuthType({
           question: "Already have an account? ",
           href: "/signin",
