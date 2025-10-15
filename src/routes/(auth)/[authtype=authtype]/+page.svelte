@@ -4,10 +4,6 @@
   import { authClient } from "$lib/auth-client";
   import SubmitButton from "$lib/components/submit-button.svelte";
 
-  import type { PageProps } from "./$types";
-
-  const { data }: PageProps = $props();
-
   let email = $state("");
   let password = $state("");
   let username = $state("");
@@ -75,35 +71,6 @@
 
     try {
       if (isSignUp) {
-        try {
-          const response = await fetch("/api/auth/check-username", {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({ username }),
-          });
-
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            const message =
-              typeof data?.message === "string"
-                ? data.message
-                : "Failed to validate username";
-
-            if (response.status === 409) {
-              fieldErrors.username = message;
-            }
-
-            errorMessage = message;
-            return;
-          }
-        } catch (validationError) {
-          console.error("Username validation error:", validationError);
-          errorMessage = "Failed to validate username. Please try again.";
-          return;
-        }
-
         const { error } = await authClient.signUp.email({
           email,
           password,

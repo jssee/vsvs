@@ -16,7 +16,6 @@ import type * as http from "../http.js";
 import type * as invitations from "../invitations.js";
 import type * as phase_transitions from "../phase_transitions.js";
 import type * as players from "../players.js";
-import type * as session from "../session.js";
 import type * as sessions from "../sessions.js";
 import type * as spotify from "../spotify.js";
 import type * as spotify_actions from "../spotify_actions.js";
@@ -47,7 +46,6 @@ declare const fullApi: ApiFromModules<{
   invitations: typeof invitations;
   phase_transitions: typeof phase_transitions;
   players: typeof players;
-  session: typeof session;
   sessions: typeof sessions;
   spotify: typeof spotify;
   spotify_actions: typeof spotify_actions;

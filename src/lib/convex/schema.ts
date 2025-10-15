@@ -2,22 +2,18 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // User table - synced from Better Auth
+  // Better Auth manages authentication (passwords, sessions, etc.)
+  // This table only stores app-specific user data
   user: defineTable({
     email: v.string(),
-    password: v.string(),
-    // Required username handle for display and mentions
-    username: v.string(),
+    username: v.string(), // Display name and handle for mentions
   })
     .index("by_email", ["email"])
     .index("by_username", ["username"]),
 
-  session: defineTable({
-    sessionId: v.string(),
-    userId: v.id("user"),
-    expiresAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_session_id", ["sessionId"]),
+  // Note: Session management is handled by Better Auth
+  // No need for a custom session table
 
   friendship: defineTable({
     requesterId: v.id("user"),

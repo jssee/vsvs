@@ -68,9 +68,11 @@ function isUnauthorizedError(error: unknown) {
       ? error.message
       : typeof error === "string"
         ? error
-      : "";
+        : "";
 
-  return message.toLowerCase().includes("unauthorized") || message.includes("401");
+  return (
+    message.toLowerCase().includes("unauthorized") || message.includes("401")
+  );
 }
 
 function isUsernameTakenError(error: unknown) {

@@ -187,10 +187,8 @@ export const getFriends = query({
     for (const friendship of sentRequests) {
       const friend = await ctx.db.get(friendship.recipientId);
       if (friend) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...friendPublic } = friend;
         friends.push({
-          ...friendPublic,
+          ...friend,
           friendshipId: friendship._id,
           friendedAt: friendship.acceptedAt || friendship.createdAt,
         });
@@ -200,10 +198,8 @@ export const getFriends = query({
     for (const friendship of receivedRequests) {
       const friend = await ctx.db.get(friendship.requesterId);
       if (friend) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...friendPublic } = friend;
         friends.push({
-          ...friendPublic,
+          ...friend,
           friendshipId: friendship._id,
           friendedAt: friendship.acceptedAt || friendship.createdAt,
         });
@@ -261,12 +257,10 @@ export const getPendingFriendRequests = query({
     for (const friendship of incomingRequests) {
       const requester = await ctx.db.get(friendship.requesterId);
       if (requester) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...requesterPublic } = requester;
         incoming.push({
           friendshipId: friendship._id,
           createdAt: friendship.createdAt,
-          requester: requesterPublic,
+          requester: requester,
         });
       }
     }
@@ -275,12 +269,10 @@ export const getPendingFriendRequests = query({
     for (const friendship of outgoingRequests) {
       const recipient = await ctx.db.get(friendship.recipientId);
       if (recipient) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...recipientPublic } = recipient;
         outgoing.push({
           friendshipId: friendship._id,
           createdAt: friendship.createdAt,
-          recipient: recipientPublic,
+          recipient: recipient,
         });
       }
     }
