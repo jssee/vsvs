@@ -14,7 +14,7 @@ export const checkPhaseTransitions = internalMutation({
 
     // Find sessions that need phase transitions
     const activeSessions = await ctx.db
-      .query("vsSessions")
+      .query("vsSession")
       .filter((q) =>
         q.or(
           q.eq(q.field("phase"), "submission"),
@@ -77,18 +77,18 @@ export const checkPhaseTransitions = internalMutation({
  */
 async function checkAllPlayersVoted(
   ctx: MutationCtx,
-  sessionId: Id<"vsSessions">,
+  sessionId: Id<"vsSession">,
 ): Promise<boolean> {
   const session = await ctx.db.get(sessionId);
   if (!session) return false;
   const players = await ctx.db
-    .query("battlePlayers")
+    .query("battlePlayer")
     .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
     .collect();
   if (players.length === 0) return false;
   for (const p of players) {
     const stars = await ctx.db
-      .query("stars")
+      .query("star")
       .withIndex("by_session_and_voter", (q) =>
         q.eq("sessionId", sessionId).eq("voterId", p.userId),
       )
@@ -102,7 +102,7 @@ async function checkAllPlayersVoted(
  * Handle session completion - advance next session or end battle
  */
 export const handleSessionCompletion = internalMutation({
-  args: { sessionId: v.id("vsSessions") },
+  args: { sessionId: v.id("vsSession") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -113,7 +113,7 @@ export const handleSessionCompletion = internalMutation({
 
     // Find next session
     const nextSession = await ctx.db
-      .query("vsSessions")
+      .query("vsSession")
       .withIndex("by_battleId_and_sessionNumber", (q) =>
         q
           .eq("battleId", session.battleId)
@@ -155,7 +155,7 @@ export const handleSessionCompletion = internalMutation({
  * Placeholder for future phase.
  */
 export const calculateSessionWinner = internalMutation({
-  args: { sessionId: v.id("vsSessions") },
+  args: { sessionId: v.id("vsSession") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -163,7 +163,7 @@ export const calculateSessionWinner = internalMutation({
 
     // Aggregate stars per user for this session
     const submissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
@@ -182,7 +182,7 @@ export const calculateSessionWinner = internalMutation({
     // Update players' totalStarsEarned with stars received this session
     for (const [userId, { totalStars }] of userTotals) {
       const player = await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", session.battleId).eq("userId", userId),
         )
@@ -204,7 +204,7 @@ export const calculateSessionWinner = internalMutation({
     );
     for (const [userId] of winners) {
       const player = await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", session.battleId).eq("userId", userId),
         )
@@ -223,11 +223,11 @@ export const calculateSessionWinner = internalMutation({
  * Placeholder for future phase.
  */
 export const calculateBattleChampion = internalMutation({
-  args: { battleId: v.id("battles") },
+  args: { battleId: v.id("battle") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const _players = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 

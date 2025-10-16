@@ -8,7 +8,7 @@ import { internal } from "./_generated/api";
 export const awardStar = mutation({
   args: {
     userId: v.id("user"),
-    submissionId: v.id("submissions"),
+    submissionId: v.id("submission"),
   },
   returns: v.object({
     success: v.boolean(),
@@ -47,7 +47,7 @@ export const awardStar = mutation({
 
     // Must be battle participant
     const player = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )
@@ -69,7 +69,7 @@ export const awardStar = mutation({
 
     // Count existing stars by this voter in this session
     const existingStars = await ctx.db
-      .query("stars")
+      .query("star")
       .withIndex("by_session_and_voter", (q) =>
         q.eq("sessionId", submission.sessionId).eq("voterId", args.userId),
       )
@@ -83,7 +83,7 @@ export const awardStar = mutation({
     }
 
     // Insert star and update submission count
-    await ctx.db.insert("stars", {
+    await ctx.db.insert("star", {
       sessionId: submission.sessionId,
       voterId: args.userId,
       submissionId: args.submissionId,
@@ -115,7 +115,7 @@ export const awardStar = mutation({
 export const removeStar = mutation({
   args: {
     userId: v.id("user"),
-    submissionId: v.id("submissions"),
+    submissionId: v.id("submission"),
   },
   returns: v.object({
     success: v.boolean(),
@@ -150,7 +150,7 @@ export const removeStar = mutation({
 
     // Find user's star for this submission
     const starToRemove = await ctx.db
-      .query("stars")
+      .query("star")
       .withIndex("by_session_and_voter", (q) =>
         q.eq("sessionId", submission.sessionId).eq("voterId", args.userId),
       )
@@ -176,7 +176,7 @@ export const removeStar = mutation({
     );
 
     const remainingStars = await ctx.db
-      .query("stars")
+      .query("star")
       .withIndex("by_session_and_voter", (q) =>
         q.eq("sessionId", submission.sessionId).eq("voterId", args.userId),
       )
@@ -195,10 +195,10 @@ export const removeStar = mutation({
  * Get voting state for current user in a session
  */
 export const getMyVotingState = query({
-  args: { sessionId: v.id("vsSessions"), userId: v.id("user") },
+  args: { sessionId: v.id("vsSession"), userId: v.id("user") },
   returns: v.object({
     starsRemaining: v.number(),
-    votedSubmissions: v.array(v.id("submissions")),
+    votedSubmissions: v.array(v.id("submission")),
     canVote: v.boolean(),
   }),
   handler: async (ctx, args) => {
@@ -208,7 +208,7 @@ export const getMyVotingState = query({
 
     // Ensure participant
     const player = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )
@@ -217,7 +217,7 @@ export const getMyVotingState = query({
       return { starsRemaining: 0, votedSubmissions: [], canVote: false };
 
     const userStars = await ctx.db
-      .query("stars")
+      .query("star")
       .withIndex("by_session_and_voter", (q) =>
         q.eq("sessionId", args.sessionId).eq("voterId", args.userId),
       )
@@ -238,14 +238,14 @@ export const getMyVotingState = query({
  * Get voting summary for a session
  */
 export const getSessionVotingSummary = query({
-  args: { sessionId: v.id("vsSessions") },
+  args: { sessionId: v.id("vsSession") },
   returns: v.object({
     totalVoters: v.number(),
     completedVoters: v.number(),
     votingProgress: v.number(),
     submissionResults: v.array(
       v.object({
-        submissionId: v.id("submissions"),
+        submissionId: v.id("submission"),
         userId: v.id("user"),
         username: v.string(),
         spotifyUrl: v.string(),
@@ -267,7 +267,7 @@ export const getSessionVotingSummary = query({
     }
 
     const battlePlayers = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
       .collect();
     const totalVoters = battlePlayers.length;
@@ -275,7 +275,7 @@ export const getSessionVotingSummary = query({
     const progress = await Promise.all(
       battlePlayers.map(async (p) => {
         const stars = await ctx.db
-          .query("stars")
+          .query("star")
           .withIndex("by_session_and_voter", (q) =>
             q.eq("sessionId", args.sessionId).eq("voterId", p.userId),
           )
@@ -288,7 +288,7 @@ export const getSessionVotingSummary = query({
       totalVoters > 0 ? Math.round((completedVoters / totalVoters) * 100) : 0;
 
     const submissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
@@ -296,7 +296,7 @@ export const getSessionVotingSummary = query({
       submissions.map(async (sub) => {
         const user = await ctx.db.get(sub.userId);
         const stars = await ctx.db
-          .query("stars")
+          .query("star")
           .withIndex("by_submissionId", (q) => q.eq("submissionId", sub._id))
           .collect();
         const voters = await Promise.all(

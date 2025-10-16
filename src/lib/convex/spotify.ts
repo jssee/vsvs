@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 
 // Public mutation to manually trigger playlist generation (creator-only)
 export const requestGenerateSessionPlaylist = mutation({
-  args: { userId: v.id("user"), sessionId: v.id("vsSessions") },
+  args: { userId: v.id("user"), sessionId: v.id("vsSession") },
   returns: v.object({ success: v.boolean(), message: v.string() }),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -30,7 +30,7 @@ export const requestGenerateSessionPlaylist = mutation({
 
 // Internal: Query minimal session data
 export const getSessionForPlaylist = internalQuery({
-  args: { sessionId: v.id("vsSessions") },
+  args: { sessionId: v.id("vsSession") },
   returns: v.union(
     v.null(),
     v.object({
@@ -53,7 +53,7 @@ export const getSessionForPlaylist = internalQuery({
     const battle = await ctx.db.get(session.battleId);
     if (!battle) return null;
     const submissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
     const withUsers = await Promise.all(
@@ -79,7 +79,7 @@ export const getSessionForPlaylist = internalQuery({
 // Internal: Patch session with playlist data
 export const updateSessionPlaylist = internalMutation({
   args: {
-    sessionId: v.id("vsSessions"),
+    sessionId: v.id("vsSession"),
     playlistUrl: v.string(),
     spotifyPlaylistId: v.string(),
   },

@@ -8,7 +8,7 @@ import { v } from "convex/values";
 export const addSession = mutation({
   args: {
     userId: v.id("user"),
-    battleId: v.id("battles"),
+    battleId: v.id("battle"),
     vibe: v.string(),
     description: v.optional(v.string()),
     submissionDeadline: v.number(),
@@ -16,7 +16,7 @@ export const addSession = mutation({
   },
   returns: v.object({
     success: v.boolean(),
-    sessionId: v.optional(v.id("vsSessions")),
+    sessionId: v.optional(v.id("vsSession")),
     message: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -62,7 +62,7 @@ export const addSession = mutation({
 
     // Get next session number
     const existingSessions = await ctx.db
-      .query("vsSessions")
+      .query("vsSession")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 
@@ -71,7 +71,7 @@ export const addSession = mutation({
     // Determine initial phase
     const phase = sessionNumber === 1 ? "submission" : ("pending" as const);
 
-    const sessionId = await ctx.db.insert("vsSessions", {
+    const sessionId = await ctx.db.insert("vsSession", {
       battleId: args.battleId,
       sessionNumber,
       vibe: args.vibe,
@@ -102,7 +102,7 @@ export const addSession = mutation({
 export const updateSession = mutation({
   args: {
     userId: v.id("user"),
-    sessionId: v.id("vsSessions"),
+    sessionId: v.id("vsSession"),
     vibe: v.optional(v.string()),
     description: v.optional(v.string()),
     submissionDeadline: v.optional(v.number()),
@@ -187,10 +187,10 @@ export const updateSession = mutation({
  * Get all sessions for a battle
  */
 export const getBattleSessions = query({
-  args: { battleId: v.id("battles") },
+  args: { battleId: v.id("battle") },
   returns: v.array(
     v.object({
-      _id: v.id("vsSessions"),
+      _id: v.id("vsSession"),
       sessionNumber: v.number(),
       vibe: v.string(),
       description: v.optional(v.string()),
@@ -213,7 +213,7 @@ export const getBattleSessions = query({
   ),
   handler: async (ctx, args) => {
     const sessions = await ctx.db
-      .query("vsSessions")
+      .query("vsSession")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .order("asc")
       .collect();
@@ -223,20 +223,20 @@ export const getBattleSessions = query({
         // Count submissions in this session
         const submissionCount = (
           await ctx.db
-            .query("submissions")
+            .query("submission")
             .withIndex("by_sessionId", (q) => q.eq("sessionId", session._id))
             .collect()
         ).length;
         // Voting progress
         const players = await ctx.db
-          .query("battlePlayers")
+          .query("battlePlayer")
           .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
           .collect();
         const totalVoters = players.length;
         const votedFlags = await Promise.all(
           players.map(async (p) => {
             const stars = await ctx.db
-              .query("stars")
+              .query("star")
               .withIndex("by_session_and_voter", (q) =>
                 q.eq("sessionId", session._id).eq("voterId", p.userId),
               )
@@ -274,11 +274,11 @@ export const getBattleSessions = query({
  * Get current active session for a battle
  */
 export const getCurrentSession = query({
-  args: { battleId: v.id("battles") },
+  args: { battleId: v.id("battle") },
   returns: v.union(
     v.null(),
     v.object({
-      _id: v.id("vsSessions"),
+      _id: v.id("vsSession"),
       sessionNumber: v.number(),
       vibe: v.string(),
       description: v.optional(v.string()),

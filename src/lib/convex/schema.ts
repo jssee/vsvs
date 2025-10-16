@@ -15,7 +15,7 @@ export default defineSchema({
   // Note: Session management is handled by Better Auth
   // No need for a custom session table
 
-  friendship: defineTable({
+  friend: defineTable({
     requesterId: v.id("user"),
     recipientId: v.id("user"),
     status: v.union(
@@ -32,7 +32,7 @@ export default defineSchema({
     .index("by_status", ["status"]),
 
   // Battles core schema
-  battles: defineTable({
+  battle: defineTable({
     name: v.string(),
     creatorId: v.id("user"),
     status: v.union(v.literal("active"), v.literal("completed")),
@@ -40,7 +40,7 @@ export default defineSchema({
     maxPlayers: v.number(),
     doubleSubmissions: v.boolean(),
     inviteCode: v.string(),
-    currentSessionId: v.optional(v.id("vsSessions")),
+    currentSessionId: v.optional(v.id("vsSession")),
     createdAt: v.number(),
   })
     .index("by_creatorId", ["creatorId"])
@@ -48,8 +48,8 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_visibility_and_status", ["visibility", "status"]),
 
-  vsSessions: defineTable({
-    battleId: v.id("battles"),
+  vsSession: defineTable({
+    battleId: v.id("battle"),
     sessionNumber: v.number(),
     vibe: v.string(),
     description: v.optional(v.string()),
@@ -68,8 +68,8 @@ export default defineSchema({
     .index("by_battleId_and_sessionNumber", ["battleId", "sessionNumber"]),
 
   // Song submissions per session
-  submissions: defineTable({
-    sessionId: v.id("vsSessions"),
+  submission: defineTable({
+    sessionId: v.id("vsSession"),
     userId: v.id("user"),
     spotifyUrl: v.string(),
     submissionOrder: v.number(), // 1 or 2 for double submissions
@@ -82,10 +82,10 @@ export default defineSchema({
     .index("by_userId", ["userId"]),
 
   // Voting stars per session
-  stars: defineTable({
-    sessionId: v.id("vsSessions"),
+  star: defineTable({
+    sessionId: v.id("vsSession"),
     voterId: v.id("user"),
-    submissionId: v.id("submissions"),
+    submissionId: v.id("submission"),
     votedAt: v.number(),
   })
     .index("by_sessionId", ["sessionId"])
@@ -112,8 +112,8 @@ export default defineSchema({
     lastFetched: v.number(),
   }).index("by_trackId", ["trackId"]),
 
-  battlePlayers: defineTable({
-    battleId: v.id("battles"),
+  battlePlayer: defineTable({
+    battleId: v.id("battle"),
     userId: v.id("user"),
     joinedAt: v.number(),
     totalStarsEarned: v.number(),
@@ -123,8 +123,8 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_battle_and_user", ["battleId", "userId"]),
 
-  invitations: defineTable({
-    battleId: v.id("battles"),
+  invitation: defineTable({
+    battleId: v.id("battle"),
     inviterId: v.id("user"),
     invitedUserId: v.optional(v.id("user")),
     invitedEmail: v.optional(v.string()),

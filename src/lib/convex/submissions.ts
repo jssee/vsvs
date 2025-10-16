@@ -11,12 +11,12 @@ import type { Id } from "./_generated/dataModel";
 export const submitSong = mutation({
   args: {
     userId: v.id("user"),
-    sessionId: v.id("vsSessions"),
+    sessionId: v.id("vsSession"),
     spotifyUrl: v.string(),
   },
   returns: v.object({
     success: v.boolean(),
-    submissionId: v.optional(v.id("submissions")),
+    submissionId: v.optional(v.id("submission")),
     message: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -53,7 +53,7 @@ export const submitSong = mutation({
 
     // Check if user is a player in this battle
     const player = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )
@@ -76,7 +76,7 @@ export const submitSong = mutation({
 
     // Check for duplicate song in this session
     const existingSubmission = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_session_and_url", (q) =>
         q.eq("sessionId", args.sessionId).eq("spotifyUrl", normalizedUrl),
       )
@@ -92,7 +92,7 @@ export const submitSong = mutation({
 
     // Get user's existing submissions for this session
     const userSubmissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_session_and_user", (q) =>
         q.eq("sessionId", args.sessionId).eq("userId", args.userId),
       )
@@ -109,7 +109,7 @@ export const submitSong = mutation({
     const submissionOrder = orderDecision.order;
 
     // Create submission
-    const submissionId = await ctx.db.insert("submissions", {
+    const submissionId = await ctx.db.insert("submission", {
       sessionId: args.sessionId,
       userId: args.userId,
       spotifyUrl: normalizedUrl,
@@ -137,12 +137,12 @@ export const submitSong = mutation({
  */
 export const getSessionSubmissions = query({
   args: {
-    sessionId: v.id("vsSessions"),
+    sessionId: v.id("vsSession"),
     currentUserId: v.optional(v.id("user")),
   },
   returns: v.array(
     v.object({
-      _id: v.id("submissions"),
+      _id: v.id("submission"),
       userId: v.id("user"),
       username: v.string(),
       spotifyUrl: v.string(),
@@ -154,7 +154,7 @@ export const getSessionSubmissions = query({
   ),
   handler: async (ctx, args) => {
     const submissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
@@ -186,10 +186,10 @@ export const getSessionSubmissions = query({
  * Get current user's submissions for a session
  */
 export const getMySessionSubmissions = query({
-  args: { sessionId: v.id("vsSessions"), userId: v.id("user") },
+  args: { sessionId: v.id("vsSession"), userId: v.id("user") },
   returns: v.array(
     v.object({
-      _id: v.id("submissions"),
+      _id: v.id("submission"),
       spotifyUrl: v.string(),
       submissionOrder: v.number(),
       submittedAt: v.number(),
@@ -198,7 +198,7 @@ export const getMySessionSubmissions = query({
   ),
   handler: async (ctx, args) => {
     const submissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_session_and_user", (q) =>
         q.eq("sessionId", args.sessionId).eq("userId", args.userId),
       )
@@ -220,7 +220,7 @@ export const getMySessionSubmissions = query({
  * Remove a submission (only before deadline)
  */
 export const removeSubmission = mutation({
-  args: { userId: v.id("user"), submissionId: v.id("submissions") },
+  args: { userId: v.id("user"), submissionId: v.id("submission") },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),
@@ -278,7 +278,7 @@ export const removeSubmission = mutation({
 export const updateSubmissionUrl = mutation({
   args: {
     userId: v.id("user"),
-    submissionId: v.id("submissions"),
+    submissionId: v.id("submission"),
     spotifyUrl: v.string(),
   },
   returns: v.object({ success: v.boolean(), message: v.string() }),
@@ -324,7 +324,7 @@ export const updateSubmissionUrl = mutation({
 
     // Check for duplicate in session
     const duplicate = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_session_and_url", (q) =>
         q.eq("sessionId", submission.sessionId).eq("spotifyUrl", normalizedUrl),
       )
@@ -346,7 +346,7 @@ export const updateSubmissionUrl = mutation({
  * Get submission statistics for a session
  */
 export const getSessionSubmissionStats = query({
-  args: { sessionId: v.id("vsSessions") },
+  args: { sessionId: v.id("vsSession") },
   returns: v.object({
     totalSubmissions: v.number(),
     uniqueSubmitters: v.number(),
@@ -357,7 +357,7 @@ export const getSessionSubmissionStats = query({
         submissionCount: v.number(),
         submissions: v.array(
           v.object({
-            _id: v.id("submissions"),
+            _id: v.id("submission"),
             submissionOrder: v.number(),
             submittedAt: v.number(),
           }),
@@ -367,7 +367,7 @@ export const getSessionSubmissionStats = query({
   }),
   handler: async (ctx, args) => {
     const submissions = await ctx.db
-      .query("submissions")
+      .query("submission")
       .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
       .collect();
 
@@ -376,7 +376,7 @@ export const getSessionSubmissionStats = query({
       {
         user: { _id: Id<"user">; username: string } | null;
         submissions: Array<{
-          _id: Id<"submissions">;
+          _id: Id<"submission">;
           submissionOrder: number;
           submittedAt: number;
         }>;

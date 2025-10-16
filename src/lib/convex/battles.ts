@@ -15,7 +15,7 @@ export const createBattle = mutation({
     visibility: v.union(v.literal("public"), v.literal("private")),
   },
   returns: v.object({
-    battleId: v.id("battles"),
+    battleId: v.id("battle"),
     inviteCode: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -37,7 +37,7 @@ export const createBattle = mutation({
     while (true) {
       const candidate = generateInviteCode();
       const existing = await ctx.db
-        .query("battles")
+        .query("battle")
         .withIndex("by_inviteCode", (q) => q.eq("inviteCode", candidate))
         .first();
       if (!existing) {
@@ -46,7 +46,7 @@ export const createBattle = mutation({
       }
     }
 
-    const battleId = await ctx.db.insert("battles", {
+    const battleId = await ctx.db.insert("battle", {
       name: args.name,
       creatorId: args.userId,
       status: "active",
@@ -58,7 +58,7 @@ export const createBattle = mutation({
     });
 
     // Add creator as first player
-    await ctx.db.insert("battlePlayers", {
+    await ctx.db.insert("battlePlayer", {
       battleId,
       userId: args.userId,
       joinedAt: Date.now(),
@@ -75,13 +75,13 @@ export const createBattle = mutation({
  */
 export const getBattle = query({
   args: {
-    battleId: v.id("battles"),
+    battleId: v.id("battle"),
     userId: v.optional(v.id("user")),
   },
   returns: v.union(
     v.null(),
     v.object({
-      _id: v.id("battles"),
+      _id: v.id("battle"),
       name: v.string(),
       creatorId: v.id("user"),
       status: v.union(v.literal("active"), v.literal("completed")),
@@ -89,7 +89,7 @@ export const getBattle = query({
       maxPlayers: v.number(),
       doubleSubmissions: v.boolean(),
       inviteCode: v.string(),
-      currentSessionId: v.optional(v.id("vsSessions")),
+      currentSessionId: v.optional(v.id("vsSession")),
       createdAt: v.number(),
       playerCount: v.number(),
       canJoin: v.boolean(),
@@ -101,7 +101,7 @@ export const getBattle = query({
 
     const playerCount = (
       await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
         .collect()
     ).length;
@@ -114,7 +114,7 @@ export const getBattle = query({
     ) {
       const uid = args.userId; // narrow for TS
       const existingPlayer = await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", args.battleId).eq("userId", uid),
         )
@@ -146,7 +146,7 @@ export const getMyBattles = query({
   args: { userId: v.id("user") },
   returns: v.array(
     v.object({
-      _id: v.id("battles"),
+      _id: v.id("battle"),
       name: v.string(),
       status: v.union(v.literal("active"), v.literal("completed")),
       playerCount: v.number(),
@@ -158,24 +158,24 @@ export const getMyBattles = query({
   handler: async (ctx, args) => {
     // Collect battles where the user is a player
     const memberships = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
-    const battleIds = new Set<Id<"battles">>(
+    const battleIds = new Set<Id<"battle">>(
       memberships.map((m) => m.battleId),
     );
 
     // Also include battles the user created (in case of legacy data where
     // the creator might not have a battlePlayers row)
     const created = await ctx.db
-      .query("battles")
+      .query("battle")
       .withIndex("by_creatorId", (q) => q.eq("creatorId", args.userId))
       .collect();
     for (const b of created) battleIds.add(b._id);
 
     const results = [] as Array<{
-      _id: Id<"battles">;
+      _id: Id<"battle">;
       name: string;
       status: "active" | "completed";
       playerCount: number;
@@ -190,7 +190,7 @@ export const getMyBattles = query({
 
       const playerCount = (
         await ctx.db
-          .query("battlePlayers")
+          .query("battlePlayer")
           .withIndex("by_battleId", (q) => q.eq("battleId", id))
           .collect()
       ).length;

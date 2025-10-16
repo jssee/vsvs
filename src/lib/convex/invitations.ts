@@ -8,7 +8,7 @@ import { v } from "convex/values";
 export const sendInvitation = mutation({
   args: {
     userId: v.id("user"), // inviter
-    battleId: v.id("battles"),
+    battleId: v.id("battle"),
     invitedEmail: v.string(),
   },
   returns: v.object({ success: v.boolean(), message: v.string() }),
@@ -38,7 +38,7 @@ export const sendInvitation = mutation({
     if (invitedUser) {
       // Check if already in battle
       const existingPlayer = await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", args.battleId).eq("userId", invitedUser._id),
         )
@@ -49,7 +49,7 @@ export const sendInvitation = mutation({
 
       // Check for existing pending invitation
       const duplicate = await ctx.db
-        .query("invitations")
+        .query("invitation")
         .withIndex("by_invitedUserId", (q) =>
           q.eq("invitedUserId", invitedUser._id),
         )
@@ -60,7 +60,7 @@ export const sendInvitation = mutation({
         return { success: false, message: "Invitation already sent" };
       }
 
-      await ctx.db.insert("invitations", {
+      await ctx.db.insert("invitation", {
         battleId: args.battleId,
         inviterId: args.userId,
         invitedUserId: invitedUser._id,
@@ -72,7 +72,7 @@ export const sendInvitation = mutation({
     } else {
       // Check for existing pending invitation by email
       const duplicate = await ctx.db
-        .query("invitations")
+        .query("invitation")
         .withIndex("by_invitedEmail", (q) =>
           q.eq("invitedEmail", args.invitedEmail),
         )
@@ -83,7 +83,7 @@ export const sendInvitation = mutation({
         return { success: false, message: "Invitation already sent" };
       }
 
-      await ctx.db.insert("invitations", {
+      await ctx.db.insert("invitation", {
         battleId: args.battleId,
         inviterId: args.userId,
         invitedUserId: undefined,
@@ -105,8 +105,8 @@ export const getMyInvitations = query({
   args: { userId: v.id("user") },
   returns: v.array(
     v.object({
-      _id: v.id("invitations"),
-      battleId: v.id("battles"),
+      _id: v.id("invitation"),
+      battleId: v.id("battle"),
       inviterId: v.id("user"),
       invitedUserId: v.optional(v.id("user")),
       invitedEmail: v.optional(v.string()),
@@ -124,13 +124,13 @@ export const getMyInvitations = query({
     if (!me) return [];
 
     const direct = await ctx.db
-      .query("invitations")
+      .query("invitation")
       .withIndex("by_invitedUserId", (q) => q.eq("invitedUserId", args.userId))
       .collect();
 
     const emailBased = me.email
       ? await ctx.db
-          .query("invitations")
+          .query("invitation")
           .withIndex("by_invitedEmail", (q) => q.eq("invitedEmail", me.email))
           .collect()
       : [];
@@ -150,13 +150,13 @@ export const getMyInvitations = query({
 export const respondToInvitation = mutation({
   args: {
     userId: v.id("user"),
-    invitationId: v.id("invitations"),
+    invitationId: v.id("invitation"),
     response: v.union(v.literal("accepted"), v.literal("declined")),
   },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),
-    battleId: v.optional(v.id("battles")),
+    battleId: v.optional(v.id("battle")),
   }),
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
@@ -191,7 +191,7 @@ export const respondToInvitation = mutation({
 
     if (args.response === "accepted") {
       const currentPlayers = await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battleId", (q) => q.eq("battleId", invitation.battleId))
         .collect();
 
@@ -201,13 +201,13 @@ export const respondToInvitation = mutation({
 
       // Check not already joined via code or duplicate
       const existingPlayer = await ctx.db
-        .query("battlePlayers")
+        .query("battlePlayer")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", invitation.battleId).eq("userId", args.userId),
         )
         .first();
       if (!existingPlayer) {
-        await ctx.db.insert("battlePlayers", {
+        await ctx.db.insert("battlePlayer", {
           battleId: invitation.battleId,
           userId: args.userId,
           joinedAt: Date.now(),

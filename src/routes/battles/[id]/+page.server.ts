@@ -21,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
   const convexClient =
     client || (await import("$lib/convex-client")).getConvexClient();
 
-  const battleId = params.id as Id<"battles">;
+  const battleId = params.id as Id<"battle">;
   const battle = await convexClient.query(api.battles.getBattle, {
     battleId,
     userId: user?._id,
@@ -45,7 +45,7 @@ export const load: PageServerLoad = async (event) => {
 async function sendBattleInvitation(
   client: ConvexHttpClient,
   userId: Id<"user">,
-  battleId: Id<"battles">,
+  battleId: Id<"battle">,
   invitedEmail: string,
 ) {
   // Basic email validation
@@ -89,7 +89,7 @@ export const actions: Actions = {
 
     const formData = await request.formData();
     const invitedEmail = formData.get("invitedEmail")?.toString().trim();
-    const battleId = params.id as Id<"battles">;
+    const battleId = params.id as Id<"battle">;
 
     if (!invitedEmail) {
       return fail(400, { message: "Email is required" });

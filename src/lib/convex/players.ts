@@ -6,10 +6,10 @@ import type { Id } from "./_generated/dataModel";
  * Get all players in a battle
  */
 export const getBattlePlayers = query({
-  args: { battleId: v.id("battles") },
+  args: { battleId: v.id("battle") },
   returns: v.array(
     v.object({
-      _id: v.id("battlePlayers"),
+      _id: v.id("battlePlayer"),
       userId: v.id("user"),
       username: v.string(),
       joinedAt: v.number(),
@@ -23,12 +23,12 @@ export const getBattlePlayers = query({
     if (!battle) return [];
 
     const players = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 
     const results = [] as Array<{
-      _id: Id<"battlePlayers">;
+      _id: Id<"battlePlayer">;
       userId: Id<"user">;
       username: string;
       joinedAt: number;
@@ -61,7 +61,7 @@ export const joinBattleByCode = mutation({
   args: { inviteCode: v.string(), userId: v.id("user") },
   returns: v.object({
     success: v.boolean(),
-    battleId: v.optional(v.id("battles")),
+    battleId: v.optional(v.id("battle")),
     message: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -71,7 +71,7 @@ export const joinBattleByCode = mutation({
     }
 
     const battle = await ctx.db
-      .query("battles")
+      .query("battle")
       .withIndex("by_inviteCode", (q) => q.eq("inviteCode", args.inviteCode))
       .first();
 
@@ -84,7 +84,7 @@ export const joinBattleByCode = mutation({
     }
 
     const existingPlayer = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", battle._id).eq("userId", args.userId),
       )
@@ -98,7 +98,7 @@ export const joinBattleByCode = mutation({
     }
 
     const currentPlayers = await ctx.db
-      .query("battlePlayers")
+      .query("battlePlayer")
       .withIndex("by_battleId", (q) => q.eq("battleId", battle._id))
       .collect();
 
@@ -106,7 +106,7 @@ export const joinBattleByCode = mutation({
       return { success: false, message: "This battle is full" };
     }
 
-    await ctx.db.insert("battlePlayers", {
+    await ctx.db.insert("battlePlayer", {
       battleId: battle._id,
       userId: args.userId,
       joinedAt: Date.now(),

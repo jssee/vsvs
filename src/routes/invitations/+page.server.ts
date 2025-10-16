@@ -45,7 +45,7 @@ export const load: PageServerLoad = async (event) => {
 async function respondToInvitation(
   client: ConvexHttpClient,
   userId: Id<"user">,
-  invitationId: Id<"invitations">,
+  invitationId: Id<"invitation">,
   response: "accepted" | "declined",
 ) {
   const apiResponse = await client.mutation(
@@ -103,7 +103,7 @@ export const actions: Actions = {
     const result = await respondToInvitation(
       client,
       user._id,
-      invitationId as Id<"invitations">,
+      invitationId as Id<"invitation">,
       response as "accepted" | "declined",
     );
 

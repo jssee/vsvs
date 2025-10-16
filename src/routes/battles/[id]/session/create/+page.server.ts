@@ -21,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
   const { client, user } = await requireAuth(event);
 
   const battle = await client.query(api.battles.getBattle, {
-    battleId: params.id as Id<"battles">,
+    battleId: params.id as Id<"battle">,
     userId: user._id,
   });
   if (!battle) throw error(404, "Battle not found");
@@ -59,7 +59,7 @@ export const actions = {
       async () =>
         await client.mutation(api.sessions.addSession, {
           userId: user._id,
-          battleId: params.id as Id<"battles">,
+          battleId: params.id as Id<"battle">,
           vibe: form.data.vibe,
           description: form.data.description,
           submissionDeadline,

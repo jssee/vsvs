@@ -6,7 +6,7 @@ export const sendFriendRequest = mutation({
     requesterId: v.id("user"),
     recipientId: v.id("user"),
   },
-  returns: v.id("friendship"),
+  returns: v.id("friend"),
   handler: async (ctx, args) => {
     if (args.requesterId === args.recipientId) {
       throw new Error("Cannot send friend request to yourself");
@@ -20,7 +20,7 @@ export const sendFriendRequest = mutation({
     }
 
     const existingFriendship = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester_and_recipient", (q) =>
         q
           .eq("requesterId", args.requesterId)
@@ -29,7 +29,7 @@ export const sendFriendRequest = mutation({
       .unique();
 
     const reverseFriendship = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester_and_recipient", (q) =>
         q
           .eq("requesterId", args.recipientId)
@@ -50,7 +50,7 @@ export const sendFriendRequest = mutation({
       }
     }
 
-    return await ctx.db.insert("friendship", {
+    return await ctx.db.insert("friend", {
       requesterId: args.requesterId,
       recipientId: args.recipientId,
       status: "pending",
@@ -61,7 +61,7 @@ export const sendFriendRequest = mutation({
 
 export const acceptFriendRequest = mutation({
   args: {
-    friendshipId: v.id("friendship"),
+    friendshipId: v.id("friend"),
     userId: v.id("user"),
   },
   returns: v.null(),
@@ -91,7 +91,7 @@ export const acceptFriendRequest = mutation({
 
 export const rejectFriendRequest = mutation({
   args: {
-    friendshipId: v.id("friendship"),
+    friendshipId: v.id("friend"),
     userId: v.id("user"),
   },
   returns: v.null(),
@@ -127,14 +127,14 @@ export const removeFriend = mutation({
     }
 
     const friendship1 = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester_and_recipient", (q) =>
         q.eq("requesterId", args.userId).eq("recipientId", args.friendId),
       )
       .unique();
 
     const friendship2 = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester_and_recipient", (q) =>
         q.eq("requesterId", args.friendId).eq("recipientId", args.userId),
       )
@@ -165,19 +165,19 @@ export const getFriends = query({
       _creationTime: v.number(),
       email: v.string(),
       username: v.string(),
-      friendshipId: v.id("friendship"),
+      friendshipId: v.id("friend"),
       friendedAt: v.number(),
     }),
   ),
   handler: async (ctx, args) => {
     const sentRequests = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester", (q) => q.eq("requesterId", args.userId))
       .filter((q) => q.eq(q.field("status"), "accepted"))
       .collect();
 
     const receivedRequests = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_recipient", (q) => q.eq("recipientId", args.userId))
       .filter((q) => q.eq(q.field("status"), "accepted"))
       .collect();
@@ -217,7 +217,7 @@ export const getPendingFriendRequests = query({
   returns: v.object({
     incoming: v.array(
       v.object({
-        friendshipId: v.id("friendship"),
+        friendshipId: v.id("friend"),
         createdAt: v.number(),
         requester: v.object({
           _id: v.id("user"),
@@ -229,7 +229,7 @@ export const getPendingFriendRequests = query({
     ),
     outgoing: v.array(
       v.object({
-        friendshipId: v.id("friendship"),
+        friendshipId: v.id("friend"),
         createdAt: v.number(),
         recipient: v.object({
           _id: v.id("user"),
@@ -242,13 +242,13 @@ export const getPendingFriendRequests = query({
   }),
   handler: async (ctx, args) => {
     const incomingRequests = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_recipient", (q) => q.eq("recipientId", args.userId))
       .filter((q) => q.eq(q.field("status"), "pending"))
       .collect();
 
     const outgoingRequests = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester", (q) => q.eq("requesterId", args.userId))
       .filter((q) => q.eq(q.field("status"), "pending"))
       .collect();
@@ -289,16 +289,16 @@ export const checkFriendshipStatus = query({
   returns: v.union(
     v.object({
       status: v.literal("friends"),
-      friendshipId: v.id("friendship"),
+      friendshipId: v.id("friend"),
       friendedAt: v.number(),
     }),
     v.object({
       status: v.literal("pending_sent"),
-      friendshipId: v.id("friendship"),
+      friendshipId: v.id("friend"),
     }),
     v.object({
       status: v.literal("pending_received"),
-      friendshipId: v.id("friendship"),
+      friendshipId: v.id("friend"),
     }),
     v.object({
       status: v.literal("none"),
@@ -310,14 +310,14 @@ export const checkFriendshipStatus = query({
     }
 
     const friendship1 = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester_and_recipient", (q) =>
         q.eq("requesterId", args.userId1).eq("recipientId", args.userId2),
       )
       .unique();
 
     const friendship2 = await ctx.db
-      .query("friendship")
+      .query("friend")
       .withIndex("by_requester_and_recipient", (q) =>
         q.eq("requesterId", args.userId2).eq("recipientId", args.userId1),
       )

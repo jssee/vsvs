@@ -67,8 +67,8 @@ export const load: PageServerLoad = async (event) => {
   const convexClient =
     client || (await import("$lib/convex-client")).getConvexClient();
 
-  const battleId = params.id as Id<"battles">;
-  const sessionId = params.sessionId as Id<"vsSessions">;
+  const battleId = params.id as Id<"battle">;
+  const sessionId = params.sessionId as Id<"vsSession">;
 
   const battle = await convexClient.query(api.battles.getBattle, {
     battleId,
@@ -164,7 +164,7 @@ export const actions = {
       async () =>
         await client.mutation(api.submissions.submitSong, {
           userId: user._id,
-          sessionId: form.data.sessionId as Id<"vsSessions">,
+          sessionId: form.data.sessionId as Id<"vsSession">,
           spotifyUrl: form.data.spotifyUrl,
         }),
     );
@@ -185,7 +185,7 @@ export const actions = {
       async () =>
         await client.mutation(api.submissions.removeSubmission, {
           userId: user._id,
-          submissionId: form.data.submissionId as Id<"submissions">,
+          submissionId: form.data.submissionId as Id<"submission">,
         }),
     );
 
@@ -205,7 +205,7 @@ export const actions = {
       async () =>
         await client.mutation(api.submissions.updateSubmissionUrl, {
           userId: user._id,
-          submissionId: form.data.submissionId as Id<"submissions">,
+          submissionId: form.data.submissionId as Id<"submission">,
           spotifyUrl: form.data.spotifyUrl,
         }),
     );
@@ -226,7 +226,7 @@ export const actions = {
       async () =>
         await client.mutation(api.voting.awardStar, {
           userId: user._id,
-          submissionId: form.data.submissionId as Id<"submissions">,
+          submissionId: form.data.submissionId as Id<"submission">,
         }),
     );
 
@@ -246,7 +246,7 @@ export const actions = {
       async () =>
         await client.mutation(api.voting.removeStar, {
           userId: user._id,
-          submissionId: form.data.submissionId as Id<"submissions">,
+          submissionId: form.data.submissionId as Id<"submission">,
         }),
     );
 
@@ -266,7 +266,7 @@ export const actions = {
       async () =>
         await client.action(api.spotify_actions.generatePlaylistNow, {
           userId: user._id,
-          sessionId: form.data.sessionId as Id<"vsSessions">,
+          sessionId: form.data.sessionId as Id<"vsSession">,
         }),
     );
 
