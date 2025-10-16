@@ -82,7 +82,7 @@ async function checkAllPlayersVoted(
   const session = await ctx.db.get(sessionId);
   if (!session) return false;
   const players = await ctx.db
-    .query("battlePlayer")
+    .query("player")
     .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
     .collect();
   if (players.length === 0) return false;
@@ -182,7 +182,7 @@ export const calculateSessionWinner = internalMutation({
     // Update players' totalStarsEarned with stars received this session
     for (const [userId, { totalStars }] of userTotals) {
       const player = await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", session.battleId).eq("userId", userId),
         )
@@ -204,7 +204,7 @@ export const calculateSessionWinner = internalMutation({
     );
     for (const [userId] of winners) {
       const player = await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", session.battleId).eq("userId", userId),
         )
@@ -227,7 +227,7 @@ export const calculateBattleChampion = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const _players = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 

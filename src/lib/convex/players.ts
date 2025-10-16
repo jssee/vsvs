@@ -9,7 +9,7 @@ export const getBattlePlayers = query({
   args: { battleId: v.id("battle") },
   returns: v.array(
     v.object({
-      _id: v.id("battlePlayer"),
+      _id: v.id("player"),
       userId: v.id("user"),
       username: v.string(),
       joinedAt: v.number(),
@@ -23,12 +23,12 @@ export const getBattlePlayers = query({
     if (!battle) return [];
 
     const players = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 
     const results = [] as Array<{
-      _id: Id<"battlePlayer">;
+      _id: Id<"player">;
       userId: Id<"user">;
       username: string;
       joinedAt: number;
@@ -84,7 +84,7 @@ export const joinBattleByCode = mutation({
     }
 
     const existingPlayer = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", battle._id).eq("userId", args.userId),
       )
@@ -98,7 +98,7 @@ export const joinBattleByCode = mutation({
     }
 
     const currentPlayers = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battleId", (q) => q.eq("battleId", battle._id))
       .collect();
 
@@ -106,7 +106,7 @@ export const joinBattleByCode = mutation({
       return { success: false, message: "This battle is full" };
     }
 
-    await ctx.db.insert("battlePlayer", {
+    await ctx.db.insert("player", {
       battleId: battle._id,
       userId: args.userId,
       joinedAt: Date.now(),

@@ -38,7 +38,7 @@ export const sendInvitation = mutation({
     if (invitedUser) {
       // Check if already in battle
       const existingPlayer = await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", args.battleId).eq("userId", invitedUser._id),
         )
@@ -191,7 +191,7 @@ export const respondToInvitation = mutation({
 
     if (args.response === "accepted") {
       const currentPlayers = await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battleId", (q) => q.eq("battleId", invitation.battleId))
         .collect();
 
@@ -201,13 +201,13 @@ export const respondToInvitation = mutation({
 
       // Check not already joined via code or duplicate
       const existingPlayer = await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", invitation.battleId).eq("userId", args.userId),
         )
         .first();
       if (!existingPlayer) {
-        await ctx.db.insert("battlePlayer", {
+        await ctx.db.insert("player", {
           battleId: invitation.battleId,
           userId: args.userId,
           joinedAt: Date.now(),

@@ -229,7 +229,7 @@ export const getBattleSessions = query({
         ).length;
         // Voting progress
         const players = await ctx.db
-          .query("battlePlayer")
+          .query("player")
           .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
           .collect();
         const totalVoters = players.length;

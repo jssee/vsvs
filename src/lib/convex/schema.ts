@@ -112,7 +112,7 @@ export default defineSchema({
     lastFetched: v.number(),
   }).index("by_trackId", ["trackId"]),
 
-  battlePlayer: defineTable({
+  player: defineTable({
     battleId: v.id("battle"),
     userId: v.id("user"),
     joinedAt: v.number(),

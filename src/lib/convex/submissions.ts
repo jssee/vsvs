@@ -53,7 +53,7 @@ export const submitSong = mutation({
 
     // Check if user is a player in this battle
     const player = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )

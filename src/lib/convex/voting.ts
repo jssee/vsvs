@@ -47,7 +47,7 @@ export const awardStar = mutation({
 
     // Must be battle participant
     const player = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )
@@ -208,7 +208,7 @@ export const getMyVotingState = query({
 
     // Ensure participant
     const player = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battle_and_user", (q) =>
         q.eq("battleId", session.battleId).eq("userId", args.userId),
       )
@@ -267,7 +267,7 @@ export const getSessionVotingSummary = query({
     }
 
     const battlePlayers = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
       .collect();
     const totalVoters = battlePlayers.length;

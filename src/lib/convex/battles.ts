@@ -58,7 +58,7 @@ export const createBattle = mutation({
     });
 
     // Add creator as first player
-    await ctx.db.insert("battlePlayer", {
+    await ctx.db.insert("player", {
       battleId,
       userId: args.userId,
       joinedAt: Date.now(),
@@ -101,7 +101,7 @@ export const getBattle = query({
 
     const playerCount = (
       await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
         .collect()
     ).length;
@@ -114,7 +114,7 @@ export const getBattle = query({
     ) {
       const uid = args.userId; // narrow for TS
       const existingPlayer = await ctx.db
-        .query("battlePlayer")
+        .query("player")
         .withIndex("by_battle_and_user", (q) =>
           q.eq("battleId", args.battleId).eq("userId", uid),
         )
@@ -158,7 +158,7 @@ export const getMyBattles = query({
   handler: async (ctx, args) => {
     // Collect battles where the user is a player
     const memberships = await ctx.db
-      .query("battlePlayer")
+      .query("player")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
@@ -190,7 +190,7 @@ export const getMyBattles = query({
 
       const playerCount = (
         await ctx.db
-          .query("battlePlayer")
+          .query("player")
           .withIndex("by_battleId", (q) => q.eq("battleId", id))
           .collect()
       ).length;
