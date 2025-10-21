@@ -8,7 +8,7 @@ import type { Id } from "./_generated/dataModel";
  */
 export const createBattle = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     name: v.string(),
     maxPlayers: v.number(),
     doubleSubmissions: v.boolean(),
@@ -76,14 +76,14 @@ export const createBattle = mutation({
 export const getBattle = query({
   args: {
     battleId: v.id("battles"),
-    userId: v.optional(v.id("user")),
+    userId: v.optional(v.id("profile")),
   },
   returns: v.union(
     v.null(),
     v.object({
       _id: v.id("battles"),
       name: v.string(),
-      creatorId: v.id("user"),
+      creatorId: v.id("profile"),
       status: v.union(v.literal("active"), v.literal("completed")),
       visibility: v.union(v.literal("public"), v.literal("private")),
       maxPlayers: v.number(),
@@ -143,7 +143,7 @@ export const getBattle = query({
  * Get battles for a user (owner or player)
  */
 export const getMyBattles = query({
-  args: { userId: v.id("user") },
+  args: { userId: v.id("profile") },
   returns: v.array(
     v.object({
       _id: v.id("battles"),

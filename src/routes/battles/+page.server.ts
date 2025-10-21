@@ -30,7 +30,7 @@ export const load: PageServerLoad = async (event) => {
 async function joinBattleByInviteCode(
   client: any,
   inviteCode: string,
-  userId: Id<"user">,
+  userId: Id<"profile">,
 ) {
   const response = await client.mutation(api.players.joinBattleByCode, {
     inviteCode,

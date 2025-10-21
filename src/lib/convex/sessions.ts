@@ -7,7 +7,7 @@ import { v } from "convex/values";
  */
 export const addSession = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     battleId: v.id("battles"),
     vibe: v.string(),
     description: v.optional(v.string()),
@@ -101,7 +101,7 @@ export const addSession = mutation({
  */
 export const updateSession = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     sessionId: v.id("vsSessions"),
     vibe: v.optional(v.string()),
     description: v.optional(v.string()),

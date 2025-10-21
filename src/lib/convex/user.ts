@@ -5,14 +5,14 @@ export const get = query({
   args: {},
   returns: v.array(
     v.object({
-      _id: v.id("user"),
+      _id: v.id("profile"),
       _creationTime: v.number(),
       email: v.string(),
       username: v.string(),
     }),
   ),
   handler: async (ctx) => {
-    return await ctx.db.query("user").collect();
+    return await ctx.db.query("profile").collect();
   },
 });
 
@@ -22,7 +22,7 @@ export const getUserByEmail = query({
   },
   returns: v.union(
     v.object({
-      _id: v.id("user"),
+      _id: v.id("profile"),
       _creationTime: v.number(),
       email: v.string(),
       username: v.string(),
@@ -31,7 +31,7 @@ export const getUserByEmail = query({
   ),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("user")
+      .query("profile")
       .withIndex("by_email", (q) => q.eq("email", args.email))
       .unique();
   },
@@ -43,7 +43,7 @@ export const getUserByUsername = query({
   },
   returns: v.union(
     v.object({
-      _id: v.id("user"),
+      _id: v.id("profile"),
       _creationTime: v.number(),
       email: v.string(),
       username: v.string(),
@@ -52,22 +52,22 @@ export const getUserByUsername = query({
   ),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("user")
+      .query("profile")
       .withIndex("by_username", (q) => q.eq("username", args.username))
       .unique();
   },
 });
 
 // Note: User creation is now handled by Better Auth
-// The user table is synced from Better Auth users via syncCurrentUser mutation in auth.ts
+// The profile table is synced from Better Auth users via syncCurrentUser mutation in auth.ts
 
 export const getUserById = query({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
   },
   returns: v.union(
     v.object({
-      _id: v.id("user"),
+      _id: v.id("profile"),
       _creationTime: v.number(),
       email: v.string(),
       username: v.string(),

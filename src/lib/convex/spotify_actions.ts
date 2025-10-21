@@ -66,7 +66,7 @@ export const generateSessionPlaylist = internalAction({
 
 // Public action to generate now and return URL immediately
 export const generatePlaylistNow = action({
-  args: { userId: v.id("user"), sessionId: v.id("vsSessions") },
+  args: { userId: v.id("profile"), sessionId: v.id("vsSessions") },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),

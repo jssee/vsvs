@@ -10,7 +10,7 @@ import type { Id } from "./_generated/dataModel";
  */
 export const submitSong = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     sessionId: v.id("vsSessions"),
     spotifyUrl: v.string(),
   },
@@ -138,12 +138,12 @@ export const submitSong = mutation({
 export const getSessionSubmissions = query({
   args: {
     sessionId: v.id("vsSessions"),
-    currentUserId: v.optional(v.id("user")),
+    currentUserId: v.optional(v.id("profile")),
   },
   returns: v.array(
     v.object({
       _id: v.id("submissions"),
-      userId: v.id("user"),
+      userId: v.id("profile"),
       username: v.string(),
       spotifyUrl: v.string(),
       submissionOrder: v.number(),
@@ -186,7 +186,7 @@ export const getSessionSubmissions = query({
  * Get current user's submissions for a session
  */
 export const getMySessionSubmissions = query({
-  args: { sessionId: v.id("vsSessions"), userId: v.id("user") },
+  args: { sessionId: v.id("vsSessions"), userId: v.id("profile") },
   returns: v.array(
     v.object({
       _id: v.id("submissions"),
@@ -220,7 +220,7 @@ export const getMySessionSubmissions = query({
  * Remove a submission (only before deadline)
  */
 export const removeSubmission = mutation({
-  args: { userId: v.id("user"), submissionId: v.id("submissions") },
+  args: { userId: v.id("profile"), submissionId: v.id("submissions") },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),
@@ -277,7 +277,7 @@ export const removeSubmission = mutation({
  */
 export const updateSubmissionUrl = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     submissionId: v.id("submissions"),
     spotifyUrl: v.string(),
   },
@@ -352,7 +352,7 @@ export const getSessionSubmissionStats = query({
     uniqueSubmitters: v.number(),
     submissionsByUser: v.array(
       v.object({
-        userId: v.id("user"),
+        userId: v.id("profile"),
         username: v.string(),
         submissionCount: v.number(),
         submissions: v.array(
@@ -372,9 +372,9 @@ export const getSessionSubmissionStats = query({
       .collect();
 
     const userSubmissions = new Map<
-      Id<"user">,
+      Id<"profile">,
       {
-        user: { _id: Id<"user">; username: string } | null;
+        user: { _id: Id<"profile">; username: string } | null;
         submissions: Array<{
           _id: Id<"submissions">;
           submissionOrder: number;

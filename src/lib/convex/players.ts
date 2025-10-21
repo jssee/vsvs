@@ -10,7 +10,7 @@ export const getBattlePlayers = query({
   returns: v.array(
     v.object({
       _id: v.id("battlePlayers"),
-      userId: v.id("user"),
+      userId: v.id("profile"),
       username: v.string(),
       joinedAt: v.number(),
       totalStarsEarned: v.number(),
@@ -29,7 +29,7 @@ export const getBattlePlayers = query({
 
     const results = [] as Array<{
       _id: Id<"battlePlayers">;
-      userId: Id<"user">;
+      userId: Id<"profile">;
       username: string;
       joinedAt: number;
       totalStarsEarned: number;
@@ -58,7 +58,7 @@ export const getBattlePlayers = query({
  * Join a battle via invite code
  */
 export const joinBattleByCode = mutation({
-  args: { inviteCode: v.string(), userId: v.id("user") },
+  args: { inviteCode: v.string(), userId: v.id("profile") },
   returns: v.object({
     success: v.boolean(),
     battleId: v.optional(v.id("battles")),

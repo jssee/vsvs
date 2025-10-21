@@ -7,7 +7,7 @@ import { v } from "convex/values";
  */
 export const sendInvitation = mutation({
   args: {
-    userId: v.id("user"), // inviter
+    userId: v.id("profile"), // inviter
     battleId: v.id("battles"),
     invitedEmail: v.string(),
   },
@@ -31,7 +31,7 @@ export const sendInvitation = mutation({
     }
 
     const invitedUser = await ctx.db
-      .query("user")
+      .query("profile")
       .withIndex("by_email", (q) => q.eq("email", args.invitedEmail))
       .unique();
 
@@ -102,13 +102,13 @@ export const sendInvitation = mutation({
  * List invitations for a user (by userId or by email).
  */
 export const getMyInvitations = query({
-  args: { userId: v.id("user") },
+  args: { userId: v.id("profile") },
   returns: v.array(
     v.object({
       _id: v.id("invitations"),
       battleId: v.id("battles"),
-      inviterId: v.id("user"),
-      invitedUserId: v.optional(v.id("user")),
+      inviterId: v.id("profile"),
+      invitedUserId: v.optional(v.id("profile")),
       invitedEmail: v.optional(v.string()),
       status: v.union(
         v.literal("pending"),
@@ -149,7 +149,7 @@ export const getMyInvitations = query({
  */
 export const respondToInvitation = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     invitationId: v.id("invitations"),
     response: v.union(v.literal("accepted"), v.literal("declined")),
   },

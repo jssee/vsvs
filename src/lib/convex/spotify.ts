@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 
 // Public mutation to manually trigger playlist generation (creator-only)
 export const requestGenerateSessionPlaylist = mutation({
-  args: { userId: v.id("user"), sessionId: v.id("vsSessions") },
+  args: { userId: v.id("profile"), sessionId: v.id("vsSessions") },
   returns: v.object({ success: v.boolean(), message: v.string() }),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -37,7 +37,7 @@ export const getSessionForPlaylist = internalQuery({
       sessionNumber: v.number(),
       vibe: v.string(),
       battleName: v.string(),
-      battleCreatorId: v.id("user"),
+      battleCreatorId: v.id("profile"),
       submissions: v.array(
         v.object({
           spotifyUrl: v.string(),

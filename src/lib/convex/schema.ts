@@ -2,10 +2,10 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // User table - synced from Better Auth
-  // Better Auth manages authentication (passwords, sessions, etc.)
-  // This table only stores app-specific user data
-  user: defineTable({
+  // Profile table - stores app-specific user data
+  // Better Auth manages authentication (passwords, sessions, etc.) in the 'users' table
+  // This table only stores app-specific profile data
+  profile: defineTable({
     email: v.string(),
     username: v.string(), // Display name and handle for mentions
   })
@@ -16,8 +16,8 @@ export default defineSchema({
   // No need for a custom session table
 
   friendship: defineTable({
-    requesterId: v.id("user"),
-    recipientId: v.id("user"),
+    requesterId: v.id("profile"),
+    recipientId: v.id("profile"),
     status: v.union(
       v.literal("pending"),
       v.literal("accepted"),
@@ -34,7 +34,7 @@ export default defineSchema({
   // Battles core schema
   battles: defineTable({
     name: v.string(),
-    creatorId: v.id("user"),
+    creatorId: v.id("profile"),
     status: v.union(v.literal("active"), v.literal("completed")),
     visibility: v.union(v.literal("public"), v.literal("private")),
     maxPlayers: v.number(),
@@ -70,7 +70,7 @@ export default defineSchema({
   // Song submissions per session
   submissions: defineTable({
     sessionId: v.id("vsSessions"),
-    userId: v.id("user"),
+    userId: v.id("profile"),
     spotifyUrl: v.string(),
     submissionOrder: v.number(), // 1 or 2 for double submissions
     submittedAt: v.number(),
@@ -84,7 +84,7 @@ export default defineSchema({
   // Voting stars per session
   stars: defineTable({
     sessionId: v.id("vsSessions"),
-    voterId: v.id("user"),
+    voterId: v.id("profile"),
     submissionId: v.id("submissions"),
     votedAt: v.number(),
   })
@@ -114,7 +114,7 @@ export default defineSchema({
 
   battlePlayers: defineTable({
     battleId: v.id("battles"),
-    userId: v.id("user"),
+    userId: v.id("profile"),
     joinedAt: v.number(),
     totalStarsEarned: v.number(),
     sessionsWon: v.number(),
@@ -125,8 +125,8 @@ export default defineSchema({
 
   invitations: defineTable({
     battleId: v.id("battles"),
-    inviterId: v.id("user"),
-    invitedUserId: v.optional(v.id("user")),
+    inviterId: v.id("profile"),
+    invitedUserId: v.optional(v.id("profile")),
     invitedEmail: v.optional(v.string()),
     status: v.union(
       v.literal("pending"),
