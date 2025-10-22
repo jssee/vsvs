@@ -84,10 +84,7 @@ export const actions = {
           // Surface Convex validation/auth messages instead of redirecting with an undefined stageId
           return message(form, response.message, { status: 400 });
         }
-        return redirect(
-          302,
-          `/battles/${params.id}/stage/${response.stageId}`,
-        );
+        return redirect(302, `/battles/${params.id}/stage/${response.stageId}`);
       },
       (err) => error(400, { message: err.message }),
     );

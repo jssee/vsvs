@@ -22,4 +22,3 @@ describe("parseLocalDateTimeToUtcMs", () => {
     expect(Number.isNaN(ms)).toBe(true);
   });
 });
-

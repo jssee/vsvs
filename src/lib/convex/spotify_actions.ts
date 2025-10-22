@@ -183,9 +183,7 @@ export const fetchTrackMetadata = internalAction({
 async function getValidSpotifyToken(ctx: ActionCtx): Promise<string | null> {
   let auth = await ctx.runQuery(internal.spotify.getSpotifyAuth, {});
   const envAccess = process?.env?.SPOTIFY_ACCESS_TOKEN as string | undefined;
-  const envRefresh = process?.env?.SPOTIFY_REFRESH_TOKEN as
-    | string
-    | undefined;
+  const envRefresh = process?.env?.SPOTIFY_REFRESH_TOKEN as string | undefined;
 
   const needsEnvSeed =
     !auth || (envRefresh && auth.refreshToken !== envRefresh);

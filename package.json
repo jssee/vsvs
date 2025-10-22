@@ -19,6 +19,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.3.2",
     "@eslint/js": "^9.35.0",
+    "@internationalized/date": "^3.9.0",
     "@lucide/svelte": "^0.546.0",
     "@sveltejs/adapter-auto": "^6.1.0",
     "@sveltejs/adapter-vercel": "^5.10.2",
@@ -28,6 +29,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^24.7.2",
     "@vitest/browser": "^3.2.4",
+    "bits-ui": "^2.14.0",
     "clsx": "^2.1.1",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
@@ -60,7 +62,6 @@
     "@convex-dev/better-auth": "^0.9.5",
     "@mmailaender/convex-better-auth-svelte": "^0.2.0",
     "better-auth": "1.3.27",
-    "bits-ui": "^2.9.8",
     "convex": "^1.27.0",
     "convex-svelte": "^0.0.11",
     "formsnap": "^2.0.1",

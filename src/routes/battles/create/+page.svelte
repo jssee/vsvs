@@ -42,10 +42,10 @@
               placeholder="Enter a name for the battle"
               bind:value={$formData.name}
             />
-            <Description class="text-muted-foreground text-xs"></Description>
+            <Description class="text-xs text-muted-foreground"></Description>
           {/snippet}
         </Control>
-        <FieldErrors class="text-destructive text-sm" />
+        <FieldErrors class="text-sm text-destructive" />
       </Field>
     </div>
     <div>
@@ -64,8 +64,8 @@
             </select>
           {/snippet}
         </Control>
-        <Description class="text-muted-foreground text-sm"></Description>
-        <FieldErrors class="text-destructive text-sm" />
+        <Description class="text-sm text-muted-foreground"></Description>
+        <FieldErrors class="text-sm text-destructive" />
       </Field>
     </div>
     <fieldset>
@@ -84,7 +84,7 @@
                 />
                 <Label class="font-medium">Double time</Label>
 
-                <Description class="text-muted-foreground text-xs">
+                <Description class="text-xs text-muted-foreground">
                   When active, players can submit two songs per stage
                 </Description>
               </div>
@@ -104,10 +104,10 @@
               placeholder=""
               bind:value={$formData.maxPlayers}
             />
-            <Description class="text-muted-foreground text-xs"></Description>
+            <Description class="text-xs text-muted-foreground"></Description>
           {/snippet}
         </Control>
-        <FieldErrors class="text-destructive text-sm" />
+        <FieldErrors class="text-sm text-destructive" />
       </Field>
     </div>
     <div>

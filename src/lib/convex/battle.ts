@@ -162,9 +162,7 @@ export const getMyBattles = query({
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
-    const battleIds = new Set<Id<"battle">>(
-      memberships.map((m) => m.battleId),
-    );
+    const battleIds = new Set<Id<"battle">>(memberships.map((m) => m.battleId));
 
     // Also include battles the user created (in case of legacy data where
     // the creator might not have a battlePlayers row)

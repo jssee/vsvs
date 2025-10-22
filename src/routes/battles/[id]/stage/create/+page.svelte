@@ -53,10 +53,10 @@
               placeholder="e.g. 90s hip hop"
               bind:value={$formData.vibe}
             />
-            <Description class="text-muted-foreground text-xs"></Description>
+            <Description class="text-xs text-muted-foreground"></Description>
           {/snippet}
         </Control>
-        <FieldErrors class="text-destructive text-sm" />
+        <FieldErrors class="text-sm text-destructive" />
       </Field>
     </div>
 
@@ -73,7 +73,7 @@
             />
           {/snippet}
         </Control>
-        <FieldErrors class="text-destructive text-sm" />
+        <FieldErrors class="text-sm text-destructive" />
       </Field>
     </div>
 
