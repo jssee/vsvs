@@ -182,12 +182,16 @@ export const fetchTrackMetadata = internalAction({
 // Helpers
 async function getValidSpotifyToken(ctx: ActionCtx): Promise<string | null> {
   let auth = await ctx.runQuery(internal.spotify.getSpotifyAuth, {});
-  // Fallback: seed from Convex env vars if missing
-  if (!auth) {
-    const envAccess = process?.env?.SPOTIFY_ACCESS_TOKEN as string | undefined;
-    const envRefresh = process?.env?.SPOTIFY_REFRESH_TOKEN as
-      | string
-      | undefined;
+  const envAccess = process?.env?.SPOTIFY_ACCESS_TOKEN as string | undefined;
+  const envRefresh = process?.env?.SPOTIFY_REFRESH_TOKEN as
+    | string
+    | undefined;
+
+  const needsEnvSeed =
+    !auth || (envRefresh && auth.refreshToken !== envRefresh);
+
+  // Fallback: seed from Convex env vars if missing or env has a newer refresh token
+  if (needsEnvSeed) {
     if (envRefresh) {
       try {
         const refreshed = await refreshSpotifyToken(envRefresh);
@@ -210,7 +214,7 @@ async function getValidSpotifyToken(ctx: ActionCtx): Promise<string | null> {
       } catch (e) {
         console.error("Failed to refresh using env refresh token", e);
       }
-    } else if (envAccess) {
+    } else if (!auth && envAccess) {
       const fallbackExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
       await ctx.runMutation(internal.spotify.storeSpotifyAuth, {
         accessToken: envAccess,
@@ -234,6 +238,7 @@ async function getValidSpotifyToken(ctx: ActionCtx): Promise<string | null> {
       await ctx.runMutation(internal.spotify.updateSpotifyAuth, {
         accessToken: refreshed.accessToken,
         expiresAt: refreshed.expiresAt,
+        refreshToken: refreshed.refreshToken,
       });
       return refreshed.accessToken;
     }
@@ -320,11 +325,20 @@ async function refreshSpotifyToken(refreshToken: string) {
       refresh_token: refreshToken,
     }),
   });
-  if (!res.ok) throw new Error(`Token refresh failed: ${res.status}`);
+  if (!res.ok) {
+    let details: string | undefined;
+    try {
+      details = await res.text();
+    } catch (e) {
+      details = String(e);
+    }
+    throw new Error(`Token refresh failed: ${res.status} ${details ?? ""}`);
+  }
   const data = await res.json();
   return {
     success: true,
     accessToken: data.access_token as string,
+    refreshToken: (data.refresh_token as string | undefined) ?? undefined,
     expiresAt: Date.now() + data.expires_in * 1000,
   } as const;
 }

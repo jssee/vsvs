@@ -136,12 +136,21 @@ export const storeSpotifyAuth = internalMutation({
 
 // Internal: Update access token
 export const updateSpotifyAuth = internalMutation({
-  args: { accessToken: v.string(), expiresAt: v.number() },
+  args: {
+    accessToken: v.string(),
+    expiresAt: v.number(),
+    refreshToken: v.optional(v.string()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("spotifyAuth").first();
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      const patch: Record<string, unknown> = {
+        accessToken: args.accessToken,
+        expiresAt: args.expiresAt,
+      };
+      if (args.refreshToken) patch.refreshToken = args.refreshToken;
+      await ctx.db.patch(existing._id, patch);
     }
     return null;
   },
