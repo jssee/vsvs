@@ -1,6 +1,6 @@
 import { redirect, fail, error } from "@sveltejs/kit";
 import * as z from "zod";
-import { superValidate } from "sveltekit-superforms";
+import { superValidate, message } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { Result } from "typescript-result";
 
@@ -68,8 +68,16 @@ export const actions = {
     );
 
     return result.fold(
-      ({ stageId }) =>
-        redirect(302, `/battles/${params.id}/stage/${stageId}`),
+      (response) => {
+        if (!response.success || !response.stageId) {
+          // Surface Convex validation/auth messages instead of redirecting with an undefined stageId
+          return message(form, response.message, { status: 400 });
+        }
+        return redirect(
+          302,
+          `/battles/${params.id}/stage/${response.stageId}`,
+        );
+      },
       (err) => error(400, { message: err.message }),
     );
   },
