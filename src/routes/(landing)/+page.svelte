@@ -10,7 +10,7 @@
 
     <div class="flex gap-4" role="group">
       <a href="/signin" class="touch-hitbox">Sign in</a>
-      <a href="/signin" class="touch-hitbox">Sign up</a>
+      <a href="/signup" class="touch-hitbox">Sign up</a>
     </div>
   </section>
 </main>
