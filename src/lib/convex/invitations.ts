@@ -212,7 +212,7 @@ export const respondToInvitation = mutation({
           userId: args.userId,
           joinedAt: Date.now(),
           totalStarsEarned: 0,
-          sessionsWon: 0,
+          stagesWon: 0,
         });
       }
 

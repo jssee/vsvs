@@ -10,27 +10,24 @@ declare const process: any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Buffer: any;
 
-// Internal: Generate Spotify playlist for a session
-export const generateSessionPlaylist = internalAction({
-  args: { sessionId: v.id("vsSession") },
+// Internal: Generate Spotify playlist for a stage
+export const generateStagePlaylist = internalAction({
+  args: { stageId: v.id("stage") },
   returns: v.null(),
   handler: async (ctx, args) => {
     try {
-      const session = await ctx.runQuery(
-        internal.spotify.getSessionForPlaylist,
-        {
-          sessionId: args.sessionId,
-        },
-      );
-      if (!session) return null;
+      const stage = await ctx.runQuery(internal.spotify.getStageForPlaylist, {
+        stageId: args.stageId,
+      });
+      if (!stage) return null;
 
       const accessToken = await getValidSpotifyToken(ctx);
       if (!accessToken) return null;
 
       const playlistResult = await createSpotifyPlaylist(
         accessToken,
-        `${session.battleName} - Session ${session.sessionNumber}`,
-        `Music battle playlist for "${session.vibe}" - Created by Vsvs app`,
+        `${stage.battleName} - Stage ${stage.stageNumber}`,
+        `Music battle playlist for "${stage.vibe}" - Created by Vsvs app`,
       );
       if (
         !playlistResult.success ||
@@ -39,7 +36,7 @@ export const generateSessionPlaylist = internalAction({
       )
         return null;
 
-      const trackUris = session.submissions
+      const trackUris = stage.submissions
         .sort((a, b) => b.starsReceived - a.starsReceived)
         .map((sub) => spotifyUrlToUri(sub.spotifyUrl))
         .filter((uri: string | null): uri is string => !!uri);
@@ -52,13 +49,13 @@ export const generateSessionPlaylist = internalAction({
         );
       }
 
-      await ctx.runMutation(internal.spotify.updateSessionPlaylist, {
-        sessionId: args.sessionId,
+      await ctx.runMutation(internal.spotify.updateStagePlaylist, {
+        stageId: args.stageId,
         playlistUrl: playlistResult.playlistUrl,
         spotifyPlaylistId: playlistResult.playlistId,
       });
     } catch (err) {
-      console.error("generateSessionPlaylist error", err);
+      console.error("generateStagePlaylist error", err);
     }
     return null;
   },
@@ -66,18 +63,18 @@ export const generateSessionPlaylist = internalAction({
 
 // Public action to generate now and return URL immediately
 export const generatePlaylistNow = action({
-  args: { userId: v.id("user"), sessionId: v.id("vsSession") },
+  args: { userId: v.id("user"), stageId: v.id("stage") },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),
     playlistUrl: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    const session = await ctx.runQuery(internal.spotify.getSessionForPlaylist, {
-      sessionId: args.sessionId,
+    const stage = await ctx.runQuery(internal.spotify.getStageForPlaylist, {
+      stageId: args.stageId,
     });
-    if (!session) return { success: false, message: "Session not found" };
-    if (session.battleCreatorId !== args.userId) {
+    if (!stage) return { success: false, message: "Stage not found" };
+    if (stage.battleCreatorId !== args.userId) {
       return {
         success: false,
         message: "Only the battle creator can generate the playlist",
@@ -88,8 +85,8 @@ export const generatePlaylistNow = action({
       return { success: false, message: "Spotify token unavailable" };
     const playlistResult = await createSpotifyPlaylist(
       accessToken,
-      `${session.battleName} - Session ${session.sessionNumber}`,
-      `Music battle playlist for "${session.vibe}" - Created by Vsvs app`,
+      `${stage.battleName} - Stage ${stage.stageNumber}`,
+      `Music battle playlist for "${stage.vibe}" - Created by Vsvs app`,
     );
     if (
       !playlistResult.success ||
@@ -98,7 +95,7 @@ export const generatePlaylistNow = action({
     ) {
       return { success: false, message: "Failed to create playlist" };
     }
-    const trackUris = session.submissions
+    const trackUris = stage.submissions
       .sort((a, b) => b.starsReceived - a.starsReceived)
       .map((sub) => spotifyUrlToUri(sub.spotifyUrl))
       .filter((uri: string | null): uri is string => !!uri);
@@ -109,8 +106,8 @@ export const generatePlaylistNow = action({
         trackUris,
       );
     }
-    await ctx.runMutation(internal.spotify.updateSessionPlaylist, {
-      sessionId: args.sessionId,
+    await ctx.runMutation(internal.spotify.updateStagePlaylist, {
+      stageId: args.stageId,
       playlistUrl: playlistResult.playlistUrl,
       spotifyPlaylistId: playlistResult.playlistId,
     });
@@ -140,7 +137,7 @@ export const fetchTrackMetadata = internalAction({
   handler: async (
     ctx,
     args,
-  ): Promise<null | {
+  ): Promise<{
     trackId: string;
     name: string;
     artists: string[];
@@ -148,7 +145,7 @@ export const fetchTrackMetadata = internalAction({
     imageUrl?: string;
     previewUrl?: string;
     durationMs: number;
-  }> => {
+  } | null> => {
     const trackId = extractTrackId(args.spotifyUrl);
     if (!trackId) return null;
     // Check cache

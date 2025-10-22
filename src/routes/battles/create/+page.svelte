@@ -85,7 +85,7 @@
                 <Label class="font-medium">Double time</Label>
 
                 <Description class="text-muted-foreground text-xs">
-                  When active, players can submit two songs per session
+                  When active, players can submit two songs per stage
                 </Description>
               </div>
             {/snippet}

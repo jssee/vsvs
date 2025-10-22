@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
 /**
- * Check and advance session phases (called by cron job)
+ * Check and advance stage phases (called by cron job)
  */
 export const checkPhaseTransitions = internalMutation({
   args: {},
@@ -12,9 +12,9 @@ export const checkPhaseTransitions = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
 
-    // Find sessions that need phase transitions
-    const activeSessions = await ctx.db
-      .query("vsSession")
+    // Find stages that need phase transitions
+    const activeStages = await ctx.db
+      .query("stage")
       .filter((q) =>
         q.or(
           q.eq(q.field("phase"), "submission"),
@@ -23,44 +23,44 @@ export const checkPhaseTransitions = internalMutation({
       )
       .collect();
 
-    for (const session of activeSessions) {
-      if (session.phase === "submission" && session.submissionDeadline <= now) {
+    for (const stage of activeStages) {
+      if (stage.phase === "submission" && stage.submissionDeadline <= now) {
         // Advance to voting phase
-        await ctx.db.patch(session._id, { phase: "voting" });
+        await ctx.db.patch(stage._id, { phase: "voting" });
 
         // Schedule playlist generation
         await ctx.scheduler.runAfter(
           0,
-          internal.spotify_actions.generateSessionPlaylist,
+          internal.spotify_actions.generateStagePlaylist,
           {
-            sessionId: session._id,
+            stageId: stage._id,
           },
         );
-      } else if (session.phase === "voting") {
+      } else if (stage.phase === "voting") {
         // Check if voting should end
         const shouldEndVoting =
-          session.votingDeadline <= now ||
-          (await checkAllPlayersVoted(ctx, session._id));
+          stage.votingDeadline <= now ||
+          (await checkAllPlayersVoted(ctx, stage._id));
 
         if (shouldEndVoting) {
           // Advance to completed phase
-          await ctx.db.patch(session._id, { phase: "completed" });
+          await ctx.db.patch(stage._id, { phase: "completed" });
 
-          // Calculate session winner and update stats (no-op until later phase)
+          // Calculate stage winner and update stats (no-op until later phase)
           await ctx.scheduler.runAfter(
             0,
-            internal.phase_transitions.calculateSessionWinner,
+            internal.phase_transitions.calculateStageWinner,
             {
-              sessionId: session._id,
+              stageId: stage._id,
             },
           );
 
-          // Check if this completes the battle or advances next session
+          // Check if this completes the battle or advances next stage
           await ctx.scheduler.runAfter(
             0,
-            internal.phase_transitions.handleSessionCompletion,
+            internal.phase_transitions.handleStageCompletion,
             {
-              sessionId: session._id,
+              stageId: stage._id,
             },
           );
         }
@@ -72,25 +72,25 @@ export const checkPhaseTransitions = internalMutation({
 });
 
 /**
- * Check if all players in a session have voted
+ * Check if all players in a stage have voted
  * Placeholder until the voting system exists; returns false to rely on deadlines.
  */
 async function checkAllPlayersVoted(
   ctx: MutationCtx,
-  sessionId: Id<"vsSession">,
+  stageId: Id<"stage">,
 ): Promise<boolean> {
-  const session = await ctx.db.get(sessionId);
-  if (!session) return false;
+  const stage = await ctx.db.get(stageId);
+  if (!stage) return false;
   const players = await ctx.db
     .query("player")
-    .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
+    .withIndex("by_battleId", (q) => q.eq("battleId", stage.battleId))
     .collect();
   if (players.length === 0) return false;
   for (const p of players) {
     const stars = await ctx.db
       .query("star")
-      .withIndex("by_session_and_voter", (q) =>
-        q.eq("sessionId", sessionId).eq("voterId", p.userId),
+      .withIndex("by_stage_and_voter", (q) =>
+        q.eq("stageId", stageId).eq("voterId", p.userId),
       )
       .collect();
     if (stars.length < 3) return false;
@@ -99,41 +99,41 @@ async function checkAllPlayersVoted(
 }
 
 /**
- * Handle session completion - advance next session or end battle
+ * Handle stage completion - advance next stage or end battle
  */
-export const handleSessionCompletion = internalMutation({
-  args: { sessionId: v.id("vsSession") },
+export const handleStageCompletion = internalMutation({
+  args: { stageId: v.id("stage") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) return null;
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) return null;
 
-    const battle = await ctx.db.get(session.battleId);
+    const battle = await ctx.db.get(stage.battleId);
     if (!battle) return null;
 
-    // Find next session
-    const nextSession = await ctx.db
-      .query("vsSession")
-      .withIndex("by_battleId_and_sessionNumber", (q) =>
+    // Find next stage
+    const nextStage = await ctx.db
+      .query("stage")
+      .withIndex("by_battleId_and_stageNumber", (q) =>
         q
-          .eq("battleId", session.battleId)
-          .eq("sessionNumber", session.sessionNumber + 1),
+          .eq("battleId", stage.battleId)
+          .eq("stageNumber", stage.stageNumber + 1),
       )
       .first();
 
-    if (nextSession) {
-      // Advance next session to submission phase
-      await ctx.db.patch(nextSession._id, { phase: "submission" });
+    if (nextStage) {
+      // Advance next stage to submission phase
+      await ctx.db.patch(nextStage._id, { phase: "submission" });
 
-      // Update battle's current session
-      await ctx.db.patch(session.battleId, {
-        currentSessionId: nextSession._id,
+      // Update battle's current stage
+      await ctx.db.patch(stage.battleId, {
+        currentStageId: nextStage._id,
       });
     } else {
-      // No more sessions - battle is complete
-      await ctx.db.patch(session.battleId, {
+      // No more stages - battle is complete
+      await ctx.db.patch(stage.battleId, {
         status: "completed",
-        currentSessionId: undefined,
+        currentStageId: undefined,
       });
 
       // Calculate battle champion (no-op until later phase)
@@ -141,7 +141,7 @@ export const handleSessionCompletion = internalMutation({
         0,
         internal.phase_transitions.calculateBattleChampion,
         {
-          battleId: session.battleId,
+          battleId: stage.battleId,
         },
       );
     }
@@ -151,20 +151,20 @@ export const handleSessionCompletion = internalMutation({
 });
 
 /**
- * Calculate session winner based on stars received
+ * Calculate stage winner based on stars received
  * Placeholder for future phase.
  */
-export const calculateSessionWinner = internalMutation({
-  args: { sessionId: v.id("vsSession") },
+export const calculateStageWinner = internalMutation({
+  args: { stageId: v.id("stage") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) return null;
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) return null;
 
-    // Aggregate stars per user for this session
+    // Aggregate stars per user for this stage
     const submissions = await ctx.db
       .query("submission")
-      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_stageId", (q) => q.eq("stageId", args.stageId))
       .collect();
 
     const userTotals = new Map<
@@ -179,12 +179,12 @@ export const calculateSessionWinner = internalMutation({
       userTotals.set(key, entry);
     }
 
-    // Update players' totalStarsEarned with stars received this session
+    // Update players' totalStarsEarned with stars received this stage
     for (const [userId, { totalStars }] of userTotals) {
       const player = await ctx.db
         .query("player")
         .withIndex("by_battle_and_user", (q) =>
-          q.eq("battleId", session.battleId).eq("userId", userId),
+          q.eq("battleId", stage.battleId).eq("userId", userId),
         )
         .first();
       if (player) {
@@ -206,11 +206,11 @@ export const calculateSessionWinner = internalMutation({
       const player = await ctx.db
         .query("player")
         .withIndex("by_battle_and_user", (q) =>
-          q.eq("battleId", session.battleId).eq("userId", userId),
+          q.eq("battleId", stage.battleId).eq("userId", userId),
         )
         .first();
       if (player) {
-        await ctx.db.patch(player._id, { sessionsWon: player.sessionsWon + 1 });
+        await ctx.db.patch(player._id, { stagesWon: player.stagesWon + 1 });
       }
     }
 

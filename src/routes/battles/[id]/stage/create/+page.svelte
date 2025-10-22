@@ -12,7 +12,7 @@
   >← Back</a
 >
 <h1 class="mb-2 text-xl font-semibold">
-  Create Session for {data.battle.name}
+  Create Stage for {data.battle.name}
 </h1>
 <div class="flex flex-col items-center justify-center">
   {#if $message}
@@ -33,7 +33,7 @@
   <form
     use:enhance
     method="post"
-    action="?/createSession"
+    action="?/createStage"
     class="w-full space-y-2 p-4 md:w-96 lg:p-0"
   >
     <div>
@@ -93,7 +93,7 @@
     </div>
 
     <div>
-      <button type="submit">Create Session</button>
+      <button type="submit">Create Stage</button>
     </div>
   </form>
 </div>

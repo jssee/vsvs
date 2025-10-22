@@ -5,13 +5,13 @@ import { decideSubmissionOrder } from "../server/utils/submission-logic";
 import type { Id } from "./_generated/dataModel";
 
 /**
- * Submit a song to the current session
- * Uses explicit userId (custom auth pattern for this repo)
+ * Submit a song to the current stage.
+ * Uses explicit userId (custom auth pattern for this repo).
  */
 export const submitSong = mutation({
   args: {
     userId: v.id("user"),
-    sessionId: v.id("vsSession"),
+    stageId: v.id("stage"),
     spotifyUrl: v.string(),
   },
   returns: v.object({
@@ -25,28 +25,28 @@ export const submitSong = mutation({
       return { success: false, message: "User not found" };
     }
 
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) {
-      return { success: false, message: "Session not found" };
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) {
+      return { success: false, message: "Stage not found" };
     }
 
-    // Check if session is in submission phase
-    if (session.phase !== "submission") {
+    // Check if stage is in submission phase
+    if (stage.phase !== "submission") {
       return {
         success: false,
         message:
-          session.phase === "pending"
+          stage.phase === "pending"
             ? "Submission period hasn't started yet"
             : "Submission period has ended",
       };
     }
 
     // Check if submission deadline has passed
-    if (Date.now() > session.submissionDeadline) {
+    if (Date.now() > stage.submissionDeadline) {
       return { success: false, message: "Submission deadline has passed" };
     }
 
-    const battle = await ctx.db.get(session.battleId);
+    const battle = await ctx.db.get(stage.battleId);
     if (!battle) {
       return { success: false, message: "Battle not found" };
     }
@@ -55,7 +55,7 @@ export const submitSong = mutation({
     const player = await ctx.db
       .query("player")
       .withIndex("by_battle_and_user", (q) =>
-        q.eq("battleId", session.battleId).eq("userId", args.userId),
+        q.eq("battleId", stage.battleId).eq("userId", args.userId),
       )
       .first();
 
@@ -74,11 +74,11 @@ export const submitSong = mutation({
 
     const normalizedUrl = normalizeSpotifyUrl(args.spotifyUrl);
 
-    // Check for duplicate song in this session
+    // Check for duplicate song in this stage
     const existingSubmission = await ctx.db
       .query("submission")
-      .withIndex("by_session_and_url", (q) =>
-        q.eq("sessionId", args.sessionId).eq("spotifyUrl", normalizedUrl),
+      .withIndex("by_stage_and_url", (q) =>
+        q.eq("stageId", args.stageId).eq("spotifyUrl", normalizedUrl),
       )
       .first();
 
@@ -90,11 +90,11 @@ export const submitSong = mutation({
       };
     }
 
-    // Get user's existing submissions for this session
+    // Get user's existing submissions for this stage
     const userSubmissions = await ctx.db
       .query("submission")
-      .withIndex("by_session_and_user", (q) =>
-        q.eq("sessionId", args.sessionId).eq("userId", args.userId),
+      .withIndex("by_stage_and_user", (q) =>
+        q.eq("stageId", args.stageId).eq("userId", args.userId),
       )
       .collect();
 
@@ -110,7 +110,7 @@ export const submitSong = mutation({
 
     // Create submission
     const submissionId = await ctx.db.insert("submission", {
-      sessionId: args.sessionId,
+      stageId: args.stageId,
       userId: args.userId,
       spotifyUrl: normalizedUrl,
       submissionOrder,
@@ -133,11 +133,11 @@ export const submitSong = mutation({
 });
 
 /**
- * Get all submissions for a session
+ * Get all submissions for a stage.
  */
-export const getSessionSubmissions = query({
+export const getStageSubmissions = query({
   args: {
-    sessionId: v.id("vsSession"),
+    stageId: v.id("stage"),
     currentUserId: v.optional(v.id("user")),
   },
   returns: v.array(
@@ -155,7 +155,7 @@ export const getSessionSubmissions = query({
   handler: async (ctx, args) => {
     const submissions = await ctx.db
       .query("submission")
-      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_stageId", (q) => q.eq("stageId", args.stageId))
       .collect();
 
     const submissionsWithDetails = await Promise.all(
@@ -183,10 +183,10 @@ export const getSessionSubmissions = query({
 });
 
 /**
- * Get current user's submissions for a session
+ * Get current user's submissions for a stage.
  */
-export const getMySessionSubmissions = query({
-  args: { sessionId: v.id("vsSession"), userId: v.id("user") },
+export const getMyStageSubmissions = query({
+  args: { stageId: v.id("stage"), userId: v.id("user") },
   returns: v.array(
     v.object({
       _id: v.id("submission"),
@@ -199,8 +199,8 @@ export const getMySessionSubmissions = query({
   handler: async (ctx, args) => {
     const submissions = await ctx.db
       .query("submission")
-      .withIndex("by_session_and_user", (q) =>
-        q.eq("sessionId", args.sessionId).eq("userId", args.userId),
+      .withIndex("by_stage_and_user", (q) =>
+        q.eq("stageId", args.stageId).eq("userId", args.userId),
       )
       .collect();
 
@@ -217,7 +217,7 @@ export const getMySessionSubmissions = query({
 });
 
 /**
- * Remove a submission (only before deadline)
+ * Remove a submission (only before deadline).
  */
 export const removeSubmission = mutation({
   args: { userId: v.id("user"), submissionId: v.id("submission") },
@@ -244,13 +244,13 @@ export const removeSubmission = mutation({
       };
     }
 
-    const session = await ctx.db.get(submission.sessionId);
-    if (!session) {
-      return { success: false, message: "Session not found" };
+    const stage = await ctx.db.get(submission.stageId);
+    if (!stage) {
+      return { success: false, message: "Stage not found" };
     }
 
     // Check if still in submission phase
-    if (session.phase !== "submission") {
+    if (stage.phase !== "submission") {
       return {
         success: false,
         message: "Cannot remove submission after submission period ends",
@@ -258,7 +258,7 @@ export const removeSubmission = mutation({
     }
 
     // Check if submission deadline has passed
-    if (Date.now() > session.submissionDeadline) {
+    if (Date.now() > stage.submissionDeadline) {
       return {
         success: false,
         message: "Cannot remove submission after deadline",
@@ -273,7 +273,7 @@ export const removeSubmission = mutation({
 });
 
 /**
- * Update a submission's Spotify URL (before deadline, owner only)
+ * Update a submission's Spotify URL (before deadline, owner only).
  */
 export const updateSubmissionUrl = mutation({
   args: {
@@ -296,17 +296,17 @@ export const updateSubmissionUrl = mutation({
       };
     }
 
-    const session = await ctx.db.get(submission.sessionId);
-    if (!session) return { success: false, message: "Session not found" };
+    const stage = await ctx.db.get(submission.stageId);
+    if (!stage) return { success: false, message: "Stage not found" };
 
-    if (session.phase !== "submission") {
+    if (stage.phase !== "submission") {
       return {
         success: false,
         message: "Cannot edit after submission period ends",
       };
     }
 
-    if (Date.now() > session.submissionDeadline) {
+    if (Date.now() > stage.submissionDeadline) {
       return { success: false, message: "Cannot edit after deadline" };
     }
 
@@ -322,11 +322,11 @@ export const updateSubmissionUrl = mutation({
       return { success: true, message: "No changes" };
     }
 
-    // Check for duplicate in session
+    // Check for duplicate in stage
     const duplicate = await ctx.db
       .query("submission")
-      .withIndex("by_session_and_url", (q) =>
-        q.eq("sessionId", submission.sessionId).eq("spotifyUrl", normalizedUrl),
+      .withIndex("by_stage_and_url", (q) =>
+        q.eq("stageId", submission.stageId).eq("spotifyUrl", normalizedUrl),
       )
       .first();
     if (duplicate && duplicate._id !== args.submissionId) {
@@ -343,10 +343,10 @@ export const updateSubmissionUrl = mutation({
 });
 
 /**
- * Get submission statistics for a session
+ * Get submission statistics for a stage.
  */
-export const getSessionSubmissionStats = query({
-  args: { sessionId: v.id("vsSession") },
+export const getStageSubmissionStats = query({
+  args: { stageId: v.id("stage") },
   returns: v.object({
     totalSubmissions: v.number(),
     uniqueSubmitters: v.number(),
@@ -368,7 +368,7 @@ export const getSessionSubmissionStats = query({
   handler: async (ctx, args) => {
     const submissions = await ctx.db
       .query("submission")
-      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_stageId", (q) => q.eq("stageId", args.stageId))
       .collect();
 
     const userSubmissions = new Map<

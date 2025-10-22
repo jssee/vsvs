@@ -1,12 +1,12 @@
 # VSVS (Svelte + Convex)
 
-Music battles with sessions, submissions, voting, and Spotify playlist generation.
+Music battles with stages, submissions, voting, and Spotify playlist generation.
 
 This app uses:
 
 - SvelteKit for UI
 - Convex for database, functions, cron, and actions
-- A central Spotify app/account to generate playlists for each session
+- A central Spotify app/account to generate playlists for each stage
 
 ## Prerequisites
 
@@ -116,7 +116,7 @@ Optional: You can also set a temporary `SPOTIFY_ACCESS_TOKEN` for quick tests (e
 
 ### 4) How playlist generation works
 
-- Automatic: When a session switches from Submission → Voting, a Convex action creates a Spotify playlist under the vsvs account, adds tracks sorted by stars, and stores the `playlistUrl` on the session.
+- Automatic: When a stage switches from Submission → Voting, a Convex action creates a Spotify playlist under the vsvs account, adds tracks sorted by stars, and stores the `playlistUrl` on the stage.
 - Manual (for testing): On the battle page, the creator sees a “Generate Playlist Now” button in the Current Session section.
   - On success, the playlist URL displays immediately.
 
@@ -136,10 +136,10 @@ Notes:
 ## Features Overview
 
 - Battles: create/join via invite code, max players, visibility
-- Sessions: creator adds sessions with explicit deadlines; auto‑advance phases
-- Submissions: per session, single/double mode, Spotify URL validation
+- Stages: creator adds stages with explicit deadlines; auto‑advance phases
+- Submissions: per stage, single/double mode, Spotify URL validation
 - Voting: 3‑star system; auto finish on all votes or at deadline; tie handling
-- Spotify: playlist per session using the vsvs account
+- Spotify: playlist per stage using the vsvs account
 
 ## Scripts
 

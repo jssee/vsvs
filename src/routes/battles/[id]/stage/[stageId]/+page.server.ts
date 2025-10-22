@@ -14,7 +14,7 @@ import type { Id } from "$lib/convex/_generated/dataModel";
 import type { Actions, PageServerLoad, ActionData } from "./$types";
 
 const submitSongSchema = z.object({
-  sessionId: z.string().min(1, "Session is required"),
+  stageId: z.string().min(1, "Stage is required"),
   spotifyUrl: z
     .string()
     .min(1, "URL is required")
@@ -56,7 +56,7 @@ const removeStarSchema = z.object({
 });
 
 const generatePlaylistSchema = z.object({
-  sessionId: z.string().min(1, "Session is required"),
+  stageId: z.string().min(1, "Stage is required"),
 });
 
 export const load: PageServerLoad = async (event) => {
@@ -68,7 +68,7 @@ export const load: PageServerLoad = async (event) => {
     client || (await import("$lib/convex-client")).getConvexClient();
 
   const battleId = params.id as Id<"battle">;
-  const sessionId = params.sessionId as Id<"vsSession">;
+  const stageId = params.stageId as Id<"stage">;
 
   const battle = await convexClient.query(api.battles.getBattle, {
     battleId,
@@ -76,43 +76,43 @@ export const load: PageServerLoad = async (event) => {
   });
   if (!battle) throw error(404, "Battle not found");
 
-  const sessions = await convexClient.query(api.sessions.getBattleSessions, {
+  const stages = await convexClient.query(api.stages.getBattleStages, {
     battleId,
   });
-  const session = sessions.find((s) => s._id === sessionId);
-  if (!session) throw error(404, "Session not found");
+  const stage = stages.find((s) => s._id === stageId);
+  if (!stage) throw error(404, "Stage not found");
 
-  // Compute time remaining similar to getCurrentSession
+  // Compute time remaining similar to getCurrentStage
   const now = Date.now();
   let timeRemaining: { phase: string; milliseconds: number; expired: boolean } =
-    { phase: session.phase, milliseconds: 0, expired: false };
-  if (session.phase === "submission") {
+    { phase: stage.phase, milliseconds: 0, expired: false };
+  if (stage.phase === "submission") {
     timeRemaining = {
       phase: "submission",
-      milliseconds: session.submissionDeadline - now,
-      expired: session.submissionDeadline <= now,
+      milliseconds: stage.submissionDeadline - now,
+      expired: stage.submissionDeadline <= now,
     };
-  } else if (session.phase === "voting") {
+  } else if (stage.phase === "voting") {
     timeRemaining = {
       phase: "voting",
-      milliseconds: session.votingDeadline - now,
-      expired: session.votingDeadline <= now,
+      milliseconds: stage.votingDeadline - now,
+      expired: stage.votingDeadline <= now,
     };
-  } else if (session.phase === "completed") {
+  } else if (stage.phase === "completed") {
     timeRemaining = { phase: "completed", milliseconds: 0, expired: false };
   }
 
-  const sessionSubmissions = await convexClient.query(
-    api.submissions.getSessionSubmissions,
+  const stageSubmissions = await convexClient.query(
+    api.submissions.getStageSubmissions,
     {
-      sessionId,
+      stageId,
       currentUserId: user?._id,
     },
   );
 
   type MySubmissionsType = Awaited<
     ReturnType<
-      typeof convexClient.query<typeof api.submissions.getMySessionSubmissions>
+      typeof convexClient.query<typeof api.submissions.getMyStageSubmissions>
     >
   >;
   let mySubmissions: MySubmissionsType = [];
@@ -124,22 +124,22 @@ export const load: PageServerLoad = async (event) => {
 
   if (user) {
     mySubmissions = await convexClient.query(
-      api.submissions.getMySessionSubmissions,
+      api.submissions.getMyStageSubmissions,
       {
-        sessionId,
+        stageId,
         userId: user._id,
       },
     );
     votingState = await convexClient.query(api.voting.getMyVotingState, {
-      sessionId,
+      stageId,
       userId: user._id,
     });
   }
 
   return {
     battle,
-    session: { ...session, timeRemaining },
-    sessionSubmissions,
+    stage: { ...stage, timeRemaining },
+    stageSubmissions,
     mySubmissions,
     votingState,
     user,
@@ -164,7 +164,7 @@ export const actions = {
       async () =>
         await client.mutation(api.submissions.submitSong, {
           userId: user._id,
-          sessionId: form.data.sessionId as Id<"vsSession">,
+          stageId: form.data.stageId as Id<"stage">,
           spotifyUrl: form.data.spotifyUrl,
         }),
     );
@@ -266,7 +266,7 @@ export const actions = {
       async () =>
         await client.action(api.spotify_actions.generatePlaylistNow, {
           userId: user._id,
-          sessionId: form.data.sessionId as Id<"vsSession">,
+          stageId: form.data.stageId as Id<"stage">,
         }),
     );
 

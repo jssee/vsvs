@@ -11,7 +11,7 @@ export function decideSubmissionOrder(
   if (existingCount === 1 && !doubleSubmissions)
     return {
       ok: false,
-      message: "You have already submitted a song for this session",
+      message: "You have already submitted a song for this stage",
     };
   return {
     ok: false,

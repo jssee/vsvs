@@ -26,22 +26,22 @@ export const awardStar = mutation({
       return { success: false, message: "Submission not found" };
     }
 
-    const session = await ctx.db.get(submission.sessionId);
-    if (!session) {
-      return { success: false, message: "Session not found" };
+    const stage = await ctx.db.get(submission.stageId);
+    if (!stage) {
+      return { success: false, message: "Stage not found" };
     }
 
     // Must be in voting phase and before deadline
-    if (session.phase !== "voting") {
+    if (stage.phase !== "voting") {
       return {
         success: false,
         message:
-          session.phase === "submission"
+          stage.phase === "submission"
             ? "Voting hasn't started yet"
             : "Voting period has ended",
       };
     }
-    if (Date.now() > session.votingDeadline) {
+    if (Date.now() > stage.votingDeadline) {
       return { success: false, message: "Voting deadline has passed" };
     }
 
@@ -49,7 +49,7 @@ export const awardStar = mutation({
     const player = await ctx.db
       .query("player")
       .withIndex("by_battle_and_user", (q) =>
-        q.eq("battleId", session.battleId).eq("userId", args.userId),
+        q.eq("battleId", stage.battleId).eq("userId", args.userId),
       )
       .first();
     if (!player) {
@@ -67,24 +67,24 @@ export const awardStar = mutation({
       };
     }
 
-    // Count existing stars by this voter in this session
+    // Count existing stars by this voter in this stage
     const existingStars = await ctx.db
       .query("star")
-      .withIndex("by_session_and_voter", (q) =>
-        q.eq("sessionId", submission.sessionId).eq("voterId", args.userId),
+      .withIndex("by_stage_and_voter", (q) =>
+        q.eq("stageId", submission.stageId).eq("voterId", args.userId),
       )
       .collect();
 
     if (existingStars.length >= 3) {
       return {
         success: false,
-        message: "You have already used all 3 stars for this session",
+        message: "You have already used all 3 stars for this stage",
       };
     }
 
     // Insert star and update submission count
     await ctx.db.insert("star", {
-      sessionId: submission.sessionId,
+      stageId: submission.stageId,
       voterId: args.userId,
       submissionId: args.submissionId,
       votedAt: Date.now(),
@@ -133,26 +133,26 @@ export const removeStar = mutation({
       return { success: false, message: "Submission not found" };
     }
 
-    const session = await ctx.db.get(submission.sessionId);
-    if (!session) {
-      return { success: false, message: "Session not found" };
+    const stage = await ctx.db.get(submission.stageId);
+    if (!stage) {
+      return { success: false, message: "Stage not found" };
     }
 
-    if (session.phase !== "voting") {
+    if (stage.phase !== "voting") {
       return {
         success: false,
         message: "Cannot change votes outside voting period",
       };
     }
-    if (Date.now() > session.votingDeadline) {
+    if (Date.now() > stage.votingDeadline) {
       return { success: false, message: "Voting deadline has passed" };
     }
 
     // Find user's star for this submission
     const starToRemove = await ctx.db
       .query("star")
-      .withIndex("by_session_and_voter", (q) =>
-        q.eq("sessionId", submission.sessionId).eq("voterId", args.userId),
+      .withIndex("by_stage_and_voter", (q) =>
+        q.eq("stageId", submission.stageId).eq("voterId", args.userId),
       )
       .filter((q) => q.eq(q.field("submissionId"), args.submissionId))
       .first();
@@ -177,8 +177,8 @@ export const removeStar = mutation({
 
     const remainingStars = await ctx.db
       .query("star")
-      .withIndex("by_session_and_voter", (q) =>
-        q.eq("sessionId", submission.sessionId).eq("voterId", args.userId),
+      .withIndex("by_stage_and_voter", (q) =>
+        q.eq("stageId", submission.stageId).eq("voterId", args.userId),
       )
       .collect();
     const starsRemaining = 3 - remainingStars.length;
@@ -192,25 +192,25 @@ export const removeStar = mutation({
 });
 
 /**
- * Get voting state for current user in a session
+ * Get voting state for current user in a stage
  */
 export const getMyVotingState = query({
-  args: { sessionId: v.id("vsSession"), userId: v.id("user") },
+  args: { stageId: v.id("stage"), userId: v.id("user") },
   returns: v.object({
     starsRemaining: v.number(),
     votedSubmissions: v.array(v.id("submission")),
     canVote: v.boolean(),
   }),
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session)
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage)
       return { starsRemaining: 0, votedSubmissions: [], canVote: false };
 
     // Ensure participant
     const player = await ctx.db
       .query("player")
       .withIndex("by_battle_and_user", (q) =>
-        q.eq("battleId", session.battleId).eq("userId", args.userId),
+        q.eq("battleId", stage.battleId).eq("userId", args.userId),
       )
       .first();
     if (!player)
@@ -218,16 +218,16 @@ export const getMyVotingState = query({
 
     const userStars = await ctx.db
       .query("star")
-      .withIndex("by_session_and_voter", (q) =>
-        q.eq("sessionId", args.sessionId).eq("voterId", args.userId),
+      .withIndex("by_stage_and_voter", (q) =>
+        q.eq("stageId", args.stageId).eq("voterId", args.userId),
       )
       .collect();
 
     const votedSubmissions = userStars.map((s) => s.submissionId);
     const starsRemaining = Math.max(0, 3 - userStars.length);
     const canVote =
-      session.phase === "voting" &&
-      Date.now() <= session.votingDeadline &&
+      stage.phase === "voting" &&
+      Date.now() <= stage.votingDeadline &&
       starsRemaining > 0;
 
     return { starsRemaining, votedSubmissions, canVote };
@@ -235,10 +235,10 @@ export const getMyVotingState = query({
 });
 
 /**
- * Get voting summary for a session
+ * Get voting summary for a stage
  */
-export const getSessionVotingSummary = query({
-  args: { sessionId: v.id("vsSession") },
+export const getStageVotingSummary = query({
+  args: { stageId: v.id("stage") },
   returns: v.object({
     totalVoters: v.number(),
     completedVoters: v.number(),
@@ -256,8 +256,8 @@ export const getSessionVotingSummary = query({
     ),
   }),
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) {
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) {
       return {
         totalVoters: 0,
         completedVoters: 0,
@@ -268,7 +268,7 @@ export const getSessionVotingSummary = query({
 
     const battlePlayers = await ctx.db
       .query("player")
-      .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
+      .withIndex("by_battleId", (q) => q.eq("battleId", stage.battleId))
       .collect();
     const totalVoters = battlePlayers.length;
 
@@ -276,8 +276,8 @@ export const getSessionVotingSummary = query({
       battlePlayers.map(async (p) => {
         const stars = await ctx.db
           .query("star")
-          .withIndex("by_session_and_voter", (q) =>
-            q.eq("sessionId", args.sessionId).eq("voterId", p.userId),
+          .withIndex("by_stage_and_voter", (q) =>
+            q.eq("stageId", args.stageId).eq("voterId", p.userId),
           )
           .collect();
         return stars.length;
@@ -289,7 +289,7 @@ export const getSessionVotingSummary = query({
 
     const submissions = await ctx.db
       .query("submission")
-      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_stageId", (q) => q.eq("stageId", args.stageId))
       .collect();
 
     const submissionResults = await Promise.all(

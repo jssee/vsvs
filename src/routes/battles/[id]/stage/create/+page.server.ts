@@ -33,7 +33,7 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions = {
-  createSession: async (event) => {
+  createStage: async (event) => {
     const { request, params } = event;
     const { client, user } = await requireAuth(event);
 
@@ -57,7 +57,7 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await client.mutation(api.sessions.addSession, {
+        await client.mutation(api.stages.addStage, {
           userId: user._id,
           battleId: params.id as Id<"battle">,
           vibe: form.data.vibe,
@@ -68,8 +68,8 @@ export const actions = {
     );
 
     return result.fold(
-      ({ sessionId }) =>
-        redirect(302, `/battles/${params.id}/session/${sessionId}`),
+      ({ stageId }) =>
+        redirect(302, `/battles/${params.id}/stage/${stageId}`),
       (err) => error(400, { message: err.message }),
     );
   },

@@ -40,7 +40,7 @@ export default defineSchema({
     maxPlayers: v.number(),
     doubleSubmissions: v.boolean(),
     inviteCode: v.string(),
-    currentSessionId: v.optional(v.id("vsSession")),
+    currentStageId: v.optional(v.id("stage")),
     createdAt: v.number(),
   })
     .index("by_creatorId", ["creatorId"])
@@ -48,9 +48,9 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_visibility_and_status", ["visibility", "status"]),
 
-  vsSession: defineTable({
+  stage: defineTable({
     battleId: v.id("battle"),
-    sessionNumber: v.number(),
+    stageNumber: v.number(),
     vibe: v.string(),
     description: v.optional(v.string()),
     submissionDeadline: v.number(),
@@ -65,31 +65,31 @@ export default defineSchema({
     spotifyPlaylistId: v.optional(v.string()),
   })
     .index("by_battleId", ["battleId"])
-    .index("by_battleId_and_sessionNumber", ["battleId", "sessionNumber"]),
+    .index("by_battleId_and_stageNumber", ["battleId", "stageNumber"]),
 
-  // Song submissions per session
+  // Song submissions per stage
   submission: defineTable({
-    sessionId: v.id("vsSession"),
+    stageId: v.id("stage"),
     userId: v.id("user"),
     spotifyUrl: v.string(),
     submissionOrder: v.number(), // 1 or 2 for double submissions
     submittedAt: v.number(),
     starsReceived: v.number(), // Updated by voting system
   })
-    .index("by_sessionId", ["sessionId"])
-    .index("by_session_and_user", ["sessionId", "userId"])
-    .index("by_session_and_url", ["sessionId", "spotifyUrl"])
+    .index("by_stageId", ["stageId"])
+    .index("by_stage_and_user", ["stageId", "userId"])
+    .index("by_stage_and_url", ["stageId", "spotifyUrl"])
     .index("by_userId", ["userId"]),
 
-  // Voting stars per session
+  // Voting stars per stage
   star: defineTable({
-    sessionId: v.id("vsSession"),
+    stageId: v.id("stage"),
     voterId: v.id("user"),
     submissionId: v.id("submission"),
     votedAt: v.number(),
   })
-    .index("by_sessionId", ["sessionId"])
-    .index("by_session_and_voter", ["sessionId", "voterId"])
+    .index("by_stageId", ["stageId"])
+    .index("by_stage_and_voter", ["stageId", "voterId"])
     .index("by_submissionId", ["submissionId"])
     .index("by_voterId", ["voterId"]),
 
@@ -117,7 +117,7 @@ export default defineSchema({
     userId: v.id("user"),
     joinedAt: v.number(),
     totalStarsEarned: v.number(),
-    sessionsWon: v.number(),
+    stagesWon: v.number(),
   })
     .index("by_battleId", ["battleId"])
     .index("by_userId", ["userId"])

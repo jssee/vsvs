@@ -57,26 +57,26 @@
 
   <section class="space-y-2 rounded border p-4">
     <div class="flex items-center justify-between">
-      <h2 class="font-medium">Sessions</h2>
+      <h2 class="font-medium">Stages</h2>
       {#if data.user && data.user._id === data.battle.creatorId && data.battle.status === "active"}
         <a
           class="text-sm underline"
-          href={`/battles/${data.battle._id}/session/create`}>Create session</a
+          href={`/battles/${data.battle._id}/stage/create`}>Create stage</a
         >
       {/if}
     </div>
-    {#if data.sessions.length === 0}
-      <p class="text-sm text-gray-600">No sessions yet.</p>
+    {#if data.stages.length === 0}
+      <p class="text-sm text-gray-600">No stages yet.</p>
     {:else}
       <ul class="divide-y">
-        {#each data.sessions as s (s._id)}
+        {#each data.stages as s (s._id)}
           <li class="py-2">
             <div class="flex items-baseline justify-between">
               <a
                 class="font-medium underline"
-                href={`/battles/${data.battle._id}/session/${s._id}`}
+                href={`/battles/${data.battle._id}/stage/${s._id}`}
               >
-                Session {s.sessionNumber}: {s.vibe}
+                Stage {s.stageNumber}: {s.vibe}
               </a>
               <span class="text-xs tracking-wide text-gray-600 uppercase"
                 >{s.phase}</span

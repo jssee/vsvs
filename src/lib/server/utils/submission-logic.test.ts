@@ -14,7 +14,7 @@ describe("decideSubmissionOrder", () => {
   it("blocks second submission when doubleSubmissions is false", () => {
     expect(decideSubmissionOrder(1, false)).toEqual({
       ok: false,
-      message: "You have already submitted a song for this session",
+      message: "You have already submitted a song for this stage",
     });
   });
 

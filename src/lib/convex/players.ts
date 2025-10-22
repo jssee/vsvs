@@ -14,7 +14,7 @@ export const getBattlePlayers = query({
       username: v.string(),
       joinedAt: v.number(),
       totalStarsEarned: v.number(),
-      sessionsWon: v.number(),
+      stagesWon: v.number(),
       isCreator: v.boolean(),
     }),
   ),
@@ -33,7 +33,7 @@ export const getBattlePlayers = query({
       username: string;
       joinedAt: number;
       totalStarsEarned: number;
-      sessionsWon: number;
+      stagesWon: number;
       isCreator: boolean;
     }>;
 
@@ -45,7 +45,7 @@ export const getBattlePlayers = query({
         username: user?.username ?? "Unknown",
         joinedAt: p.joinedAt,
         totalStarsEarned: p.totalStarsEarned,
-        sessionsWon: p.sessionsWon,
+        stagesWon: p.stagesWon,
         isCreator: p.userId === battle.creatorId,
       });
     }
@@ -111,7 +111,7 @@ export const joinBattleByCode = mutation({
       userId: args.userId,
       joinedAt: Date.now(),
       totalStarsEarned: 0,
-      sessionsWon: 0,
+      stagesWon: 0,
     });
 
     return {

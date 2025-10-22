@@ -3,13 +3,13 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
 // Public mutation to manually trigger playlist generation (creator-only)
-export const requestGenerateSessionPlaylist = mutation({
-  args: { userId: v.id("user"), sessionId: v.id("vsSession") },
+export const requestGenerateStagePlaylist = mutation({
+  args: { userId: v.id("user"), stageId: v.id("stage") },
   returns: v.object({ success: v.boolean(), message: v.string() }),
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) return { success: false, message: "Session not found" };
-    const battle = await ctx.db.get(session.battleId);
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) return { success: false, message: "Stage not found" };
+    const battle = await ctx.db.get(stage.battleId);
     if (!battle) return { success: false, message: "Battle not found" };
     if (battle.creatorId !== args.userId) {
       return {
@@ -19,22 +19,22 @@ export const requestGenerateSessionPlaylist = mutation({
     }
     await ctx.scheduler.runAfter(
       0,
-      internal.spotify_actions.generateSessionPlaylist,
+      internal.spotify_actions.generateStagePlaylist,
       {
-        sessionId: args.sessionId,
+        stageId: args.stageId,
       },
     );
     return { success: true, message: "Playlist generation triggered" };
   },
 });
 
-// Internal: Query minimal session data
-export const getSessionForPlaylist = internalQuery({
-  args: { sessionId: v.id("vsSession") },
+// Internal: Query minimal stage data
+export const getStageForPlaylist = internalQuery({
+  args: { stageId: v.id("stage") },
   returns: v.union(
     v.null(),
     v.object({
-      sessionNumber: v.number(),
+      stageNumber: v.number(),
       vibe: v.string(),
       battleName: v.string(),
       battleCreatorId: v.id("user"),
@@ -48,13 +48,13 @@ export const getSessionForPlaylist = internalQuery({
     }),
   ),
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) return null;
-    const battle = await ctx.db.get(session.battleId);
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) return null;
+    const battle = await ctx.db.get(stage.battleId);
     if (!battle) return null;
     const submissions = await ctx.db
       .query("submission")
-      .withIndex("by_sessionId", (q) => q.eq("sessionId", args.sessionId))
+      .withIndex("by_stageId", (q) => q.eq("stageId", args.stageId))
       .collect();
     const withUsers = await Promise.all(
       submissions.map(async (s) => {
@@ -67,8 +67,8 @@ export const getSessionForPlaylist = internalQuery({
       }),
     );
     return {
-      sessionNumber: session.sessionNumber,
-      vibe: session.vibe,
+      stageNumber: stage.stageNumber,
+      vibe: stage.vibe,
       battleName: battle.name,
       battleCreatorId: battle.creatorId,
       submissions: withUsers,
@@ -76,16 +76,16 @@ export const getSessionForPlaylist = internalQuery({
   },
 });
 
-// Internal: Patch session with playlist data
-export const updateSessionPlaylist = internalMutation({
+// Internal: Patch stage with playlist data
+export const updateStagePlaylist = internalMutation({
   args: {
-    sessionId: v.id("vsSession"),
+    stageId: v.id("stage"),
     playlistUrl: v.string(),
     spotifyPlaylistId: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
+    await ctx.db.patch(args.stageId, {
       playlistUrl: args.playlistUrl,
       spotifyPlaylistId: args.spotifyPlaylistId,
     });

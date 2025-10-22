@@ -2,10 +2,10 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
- * Add a new session to a battle
+ * Add a new stage to a battle
  * Uses explicit userId for auth (repo's custom auth pattern).
  */
-export const addSession = mutation({
+export const addStage = mutation({
   args: {
     userId: v.id("user"),
     battleId: v.id("battle"),
@@ -16,7 +16,7 @@ export const addSession = mutation({
   },
   returns: v.object({
     success: v.boolean(),
-    sessionId: v.optional(v.id("vsSession")),
+    stageId: v.optional(v.id("stage")),
     message: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -30,18 +30,18 @@ export const addSession = mutation({
       return { success: false, message: "Battle not found" };
     }
 
-    // Only creator can add sessions
+    // Only creator can add stages
     if (battle.creatorId !== args.userId) {
       return {
         success: false,
-        message: "Only battle creator can add sessions",
+        message: "Only battle creator can add stages",
       };
     }
 
     if (battle.status !== "active") {
       return {
         success: false,
-        message: "Cannot add sessions to completed battles",
+        message: "Cannot add stages to completed battles",
       };
     }
 
@@ -60,20 +60,20 @@ export const addSession = mutation({
       };
     }
 
-    // Get next session number
-    const existingSessions = await ctx.db
-      .query("vsSession")
+    // Get next stage number
+    const existingStages = await ctx.db
+      .query("stage")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .collect();
 
-    const sessionNumber = existingSessions.length + 1;
+    const stageNumber = existingStages.length + 1;
 
     // Determine initial phase
-    const phase = sessionNumber === 1 ? "submission" : ("pending" as const);
+    const phase = stageNumber === 1 ? "submission" : ("pending" as const);
 
-    const sessionId = await ctx.db.insert("vsSession", {
+    const stageId = await ctx.db.insert("stage", {
       battleId: args.battleId,
-      sessionNumber,
+      stageNumber,
       vibe: args.vibe,
       description: args.description,
       submissionDeadline: args.submissionDeadline,
@@ -81,28 +81,28 @@ export const addSession = mutation({
       phase,
     });
 
-    // If this is the first session, update battle's currentSessionId
-    if (sessionNumber === 1) {
+    // If this is the first stage, update battle's currentStageId
+    if (stageNumber === 1) {
       await ctx.db.patch(args.battleId, {
-        currentSessionId: sessionId,
+        currentStageId: stageId,
       });
     }
 
     return {
       success: true,
-      sessionId,
-      message: `Session ${sessionNumber} added successfully`,
+      stageId,
+      message: `Stage ${stageNumber} added successfully`,
     };
   },
 });
 
 /**
- * Update session details (only allowed for pending sessions)
+ * Update stage details (only allowed for pending stages)
  */
-export const updateSession = mutation({
+export const updateStage = mutation({
   args: {
     userId: v.id("user"),
-    sessionId: v.id("vsSession"),
+    stageId: v.id("stage"),
     vibe: v.optional(v.string()),
     description: v.optional(v.string()),
     submissionDeadline: v.optional(v.number()),
@@ -118,36 +118,36 @@ export const updateSession = mutation({
       return { success: false, message: "User not found" };
     }
 
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) {
-      return { success: false, message: "Session not found" };
+    const stage = await ctx.db.get(args.stageId);
+    if (!stage) {
+      return { success: false, message: "Stage not found" };
     }
 
-    const battle = await ctx.db.get(session.battleId);
+    const battle = await ctx.db.get(stage.battleId);
     if (!battle) {
       return { success: false, message: "Battle not found" };
     }
 
-    // Only creator can update sessions
+    // Only creator can update stages
     if (battle.creatorId !== args.userId) {
       return {
         success: false,
-        message: "Only battle creator can update sessions",
+        message: "Only battle creator can update stages",
       };
     }
 
-    // Can only update pending sessions
-    if (session.phase !== "pending") {
+    // Can only update pending stages
+    if (stage.phase !== "pending") {
       return {
         success: false,
-        message: "Can only update sessions that haven't started yet",
+        message: "Can only update stages that haven't started yet",
       };
     }
 
     // Validate new deadlines if provided
     const newSubmissionDeadline =
-      args.submissionDeadline ?? session.submissionDeadline;
-    const newVotingDeadline = args.votingDeadline ?? session.votingDeadline;
+      args.submissionDeadline ?? stage.submissionDeadline;
+    const newVotingDeadline = args.votingDeadline ?? stage.votingDeadline;
 
     if (newVotingDeadline <= newSubmissionDeadline) {
       return {
@@ -163,7 +163,7 @@ export const updateSession = mutation({
       };
     }
 
-    // Update session
+    // Update stage
     const updates: Partial<{
       vibe: string;
       description: string;
@@ -177,21 +177,21 @@ export const updateSession = mutation({
     if (args.votingDeadline !== undefined)
       updates.votingDeadline = args.votingDeadline;
 
-    await ctx.db.patch(args.sessionId, updates);
+    await ctx.db.patch(args.stageId, updates);
 
-    return { success: true, message: "Session updated successfully" };
+    return { success: true, message: "Stage updated successfully" };
   },
 });
 
 /**
- * Get all sessions for a battle
+ * Get all stages for a battle
  */
-export const getBattleSessions = query({
+export const getBattleStages = query({
   args: { battleId: v.id("battle") },
   returns: v.array(
     v.object({
-      _id: v.id("vsSession"),
-      sessionNumber: v.number(),
+      _id: v.id("stage"),
+      stageNumber: v.number(),
       vibe: v.string(),
       description: v.optional(v.string()),
       submissionDeadline: v.number(),
@@ -212,33 +212,33 @@ export const getBattleSessions = query({
     }),
   ),
   handler: async (ctx, args) => {
-    const sessions = await ctx.db
-      .query("vsSession")
+    const stages = await ctx.db
+      .query("stage")
       .withIndex("by_battleId", (q) => q.eq("battleId", args.battleId))
       .order("asc")
       .collect();
 
-    const sessionsWithDetails = await Promise.all(
-      sessions.map(async (session) => {
-        // Count submissions in this session
+    const stagesWithDetails = await Promise.all(
+      stages.map(async (stage) => {
+        // Count submissions in this stage
         const submissionCount = (
           await ctx.db
             .query("submission")
-            .withIndex("by_sessionId", (q) => q.eq("sessionId", session._id))
+            .withIndex("by_stageId", (q) => q.eq("stageId", stage._id))
             .collect()
         ).length;
         // Voting progress
         const players = await ctx.db
           .query("player")
-          .withIndex("by_battleId", (q) => q.eq("battleId", session.battleId))
+          .withIndex("by_battleId", (q) => q.eq("battleId", stage.battleId))
           .collect();
         const totalVoters = players.length;
         const votedFlags = await Promise.all(
           players.map(async (p) => {
             const stars = await ctx.db
               .query("star")
-              .withIndex("by_session_and_voter", (q) =>
-                q.eq("sessionId", session._id).eq("voterId", p.userId),
+              .withIndex("by_stage_and_voter", (q) =>
+                q.eq("stageId", stage._id).eq("voterId", p.userId),
               )
               .collect();
             return stars.length === 3;
@@ -248,14 +248,14 @@ export const getBattleSessions = query({
         const remainingVoters: string[] = [];
 
         return {
-          _id: session._id,
-          sessionNumber: session.sessionNumber,
-          vibe: session.vibe,
-          description: session.description,
-          submissionDeadline: session.submissionDeadline,
-          votingDeadline: session.votingDeadline,
-          phase: session.phase,
-          playlistUrl: session.playlistUrl,
+          _id: stage._id,
+          stageNumber: stage.stageNumber,
+          vibe: stage.vibe,
+          description: stage.description,
+          submissionDeadline: stage.submissionDeadline,
+          votingDeadline: stage.votingDeadline,
+          phase: stage.phase,
+          playlistUrl: stage.playlistUrl,
           submissionCount,
           votingProgress: {
             totalVoters,
@@ -266,20 +266,20 @@ export const getBattleSessions = query({
       }),
     );
 
-    return sessionsWithDetails;
+    return stagesWithDetails;
   },
 });
 
 /**
- * Get current active session for a battle
+ * Get current active stage for a battle
  */
-export const getCurrentSession = query({
+export const getCurrentStage = query({
   args: { battleId: v.id("battle") },
   returns: v.union(
     v.null(),
     v.object({
-      _id: v.id("vsSession"),
-      sessionNumber: v.number(),
+      _id: v.id("stage"),
+      stageNumber: v.number(),
       vibe: v.string(),
       description: v.optional(v.string()),
       submissionDeadline: v.number(),
@@ -299,29 +299,29 @@ export const getCurrentSession = query({
   ),
   handler: async (ctx, args) => {
     const battle = await ctx.db.get(args.battleId);
-    if (!battle || !battle.currentSessionId) return null;
+    if (!battle || !battle.currentStageId) return null;
 
-    const session = await ctx.db.get(battle.currentSessionId);
-    if (!session || session.phase === "pending") return null;
+    const stage = await ctx.db.get(battle.currentStageId);
+    if (!stage || stage.phase === "pending") return null;
 
     const now = Date.now();
     let timeRemaining:
       | { phase: string; milliseconds: number; expired: boolean }
       | undefined;
 
-    switch (session.phase) {
+    switch (stage.phase) {
       case "submission":
         timeRemaining = {
           phase: "submission",
-          milliseconds: session.submissionDeadline - now,
-          expired: session.submissionDeadline <= now,
+          milliseconds: stage.submissionDeadline - now,
+          expired: stage.submissionDeadline <= now,
         };
         break;
       case "voting":
         timeRemaining = {
           phase: "voting",
-          milliseconds: session.votingDeadline - now,
-          expired: session.votingDeadline <= now,
+          milliseconds: stage.votingDeadline - now,
+          expired: stage.votingDeadline <= now,
         };
         break;
       case "completed":
@@ -334,14 +334,14 @@ export const getCurrentSession = query({
     }
 
     return {
-      _id: session._id,
-      sessionNumber: session.sessionNumber,
-      vibe: session.vibe,
-      description: session.description,
-      submissionDeadline: session.submissionDeadline,
-      votingDeadline: session.votingDeadline,
-      phase: session.phase as "submission" | "voting" | "completed",
-      playlistUrl: session.playlistUrl,
+      _id: stage._id,
+      stageNumber: stage.stageNumber,
+      vibe: stage.vibe,
+      description: stage.description,
+      submissionDeadline: stage.submissionDeadline,
+      votingDeadline: stage.votingDeadline,
+      phase: stage.phase as "submission" | "voting" | "completed",
+      playlistUrl: stage.playlistUrl,
       timeRemaining: timeRemaining!,
     };
   },

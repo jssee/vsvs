@@ -28,13 +28,13 @@ export const load: PageServerLoad = async (event) => {
   });
   if (!battle) throw error(404, "Battle not found");
 
-  const sessions = await convexClient.query(api.sessions.getBattleSessions, {
+  const stages = await convexClient.query(api.stages.getBattleStages, {
     battleId,
   });
 
   return {
     battle,
-    sessions,
+    stages,
     user,
   };
 };

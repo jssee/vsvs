@@ -63,7 +63,7 @@ export const createBattle = mutation({
       userId: args.userId,
       joinedAt: Date.now(),
       totalStarsEarned: 0,
-      sessionsWon: 0,
+      stagesWon: 0,
     });
 
     return { battleId, inviteCode };
@@ -89,7 +89,7 @@ export const getBattle = query({
       maxPlayers: v.number(),
       doubleSubmissions: v.boolean(),
       inviteCode: v.string(),
-      currentSessionId: v.optional(v.id("vsSession")),
+      currentStageId: v.optional(v.id("stage")),
       createdAt: v.number(),
       playerCount: v.number(),
       canJoin: v.boolean(),
@@ -131,7 +131,7 @@ export const getBattle = query({
       maxPlayers: battle.maxPlayers,
       doubleSubmissions: battle.doubleSubmissions,
       inviteCode: battle.inviteCode,
-      currentSessionId: battle.currentSessionId,
+      currentStageId: battle.currentStageId,
       createdAt: battle.createdAt,
       playerCount,
       canJoin,
@@ -152,7 +152,7 @@ export const getMyBattles = query({
       playerCount: v.number(),
       maxPlayers: v.number(),
       createdAt: v.number(),
-      currentSessionNumber: v.optional(v.number()),
+      currentStageNumber: v.optional(v.number()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -181,7 +181,7 @@ export const getMyBattles = query({
       playerCount: number;
       maxPlayers: number;
       createdAt: number;
-      currentSessionNumber?: number;
+      currentStageNumber?: number;
     }>;
 
     for (const id of battleIds) {
@@ -195,10 +195,10 @@ export const getMyBattles = query({
           .collect()
       ).length;
 
-      let currentSessionNumber: number | undefined;
-      if (battle.currentSessionId) {
-        const currentSession = await ctx.db.get(battle.currentSessionId);
-        currentSessionNumber = currentSession?.sessionNumber;
+      let currentStageNumber: number | undefined;
+      if (battle.currentStageId) {
+        const currentStage = await ctx.db.get(battle.currentStageId);
+        currentStageNumber = currentStage?.stageNumber;
       }
 
       results.push({
@@ -208,7 +208,7 @@ export const getMyBattles = query({
         playerCount,
         maxPlayers: battle.maxPlayers,
         createdAt: battle.createdAt,
-        currentSessionNumber,
+        currentStageNumber,
       });
     }
 
