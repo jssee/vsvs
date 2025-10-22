@@ -16,11 +16,11 @@ import type * as http from "../http.js";
 import type * as invitations from "../invitations.js";
 import type * as phase_transitions from "../phase_transitions.js";
 import type * as players from "../players.js";
+import type * as profile from "../profile.js";
 import type * as spotify from "../spotify.js";
 import type * as spotify_actions from "../spotify_actions.js";
 import type * as stages from "../stages.js";
 import type * as submissions from "../submissions.js";
-import type * as user from "../user.js";
 import type * as voting from "../voting.js";
 
 import type {
@@ -46,11 +46,11 @@ declare const fullApi: ApiFromModules<{
   invitations: typeof invitations;
   phase_transitions: typeof phase_transitions;
   players: typeof players;
+  profile: typeof profile;
   spotify: typeof spotify;
   spotify_actions: typeof spotify_actions;
   stages: typeof stages;
   submissions: typeof submissions;
-  user: typeof user;
   voting: typeof voting;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

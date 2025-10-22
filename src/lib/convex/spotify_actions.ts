@@ -63,7 +63,7 @@ export const generateStagePlaylist = internalAction({
 
 // Public action to generate now and return URL immediately
 export const generatePlaylistNow = action({
-  args: { userId: v.id("user"), stageId: v.id("stage") },
+  args: { userId: v.id("profile"), stageId: v.id("stage") },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),

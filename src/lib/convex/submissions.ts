@@ -10,7 +10,7 @@ import type { Id } from "./_generated/dataModel";
  */
 export const submitSong = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     stageId: v.id("stage"),
     spotifyUrl: v.string(),
   },
@@ -138,12 +138,12 @@ export const submitSong = mutation({
 export const getStageSubmissions = query({
   args: {
     stageId: v.id("stage"),
-    currentUserId: v.optional(v.id("user")),
+    currentUserId: v.optional(v.id("profile")),
   },
   returns: v.array(
     v.object({
       _id: v.id("submission"),
-      userId: v.id("user"),
+      userId: v.id("profile"),
       username: v.string(),
       spotifyUrl: v.string(),
       submissionOrder: v.number(),
@@ -186,7 +186,7 @@ export const getStageSubmissions = query({
  * Get current user's submissions for a stage.
  */
 export const getMyStageSubmissions = query({
-  args: { stageId: v.id("stage"), userId: v.id("user") },
+  args: { stageId: v.id("stage"), userId: v.id("profile") },
   returns: v.array(
     v.object({
       _id: v.id("submission"),
@@ -220,7 +220,7 @@ export const getMyStageSubmissions = query({
  * Remove a submission (only before deadline).
  */
 export const removeSubmission = mutation({
-  args: { userId: v.id("user"), submissionId: v.id("submission") },
+  args: { userId: v.id("profile"), submissionId: v.id("submission") },
   returns: v.object({
     success: v.boolean(),
     message: v.string(),
@@ -277,7 +277,7 @@ export const removeSubmission = mutation({
  */
 export const updateSubmissionUrl = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     submissionId: v.id("submission"),
     spotifyUrl: v.string(),
   },
@@ -352,7 +352,7 @@ export const getStageSubmissionStats = query({
     uniqueSubmitters: v.number(),
     submissionsByUser: v.array(
       v.object({
-        userId: v.id("user"),
+        userId: v.id("profile"),
         username: v.string(),
         submissionCount: v.number(),
         submissions: v.array(
@@ -372,9 +372,9 @@ export const getStageSubmissionStats = query({
       .collect();
 
     const userSubmissions = new Map<
-      Id<"user">,
+      Id<"profile">,
       {
-        user: { _id: Id<"user">; username: string } | null;
+        user: { _id: Id<"profile">; username: string } | null;
         submissions: Array<{
           _id: Id<"submission">;
           submissionOrder: number;

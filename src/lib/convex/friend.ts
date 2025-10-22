@@ -3,8 +3,8 @@ import { v } from "convex/values";
 
 export const sendFriendRequest = mutation({
   args: {
-    requesterId: v.id("user"),
-    recipientId: v.id("user"),
+    requesterId: v.id("profile"),
+    recipientId: v.id("profile"),
   },
   returns: v.id("friend"),
   handler: async (ctx, args) => {
@@ -62,7 +62,7 @@ export const sendFriendRequest = mutation({
 export const acceptFriendRequest = mutation({
   args: {
     friendshipId: v.id("friend"),
-    userId: v.id("user"),
+    userId: v.id("profile"),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -92,7 +92,7 @@ export const acceptFriendRequest = mutation({
 export const rejectFriendRequest = mutation({
   args: {
     friendshipId: v.id("friend"),
-    userId: v.id("user"),
+    userId: v.id("profile"),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -117,8 +117,8 @@ export const rejectFriendRequest = mutation({
 
 export const removeFriend = mutation({
   args: {
-    userId: v.id("user"),
-    friendId: v.id("user"),
+    userId: v.id("profile"),
+    friendId: v.id("profile"),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -157,11 +157,11 @@ export const removeFriend = mutation({
 
 export const getFriends = query({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
   },
   returns: v.array(
     v.object({
-      _id: v.id("user"),
+      _id: v.id("profile"),
       _creationTime: v.number(),
       email: v.string(),
       username: v.string(),
@@ -212,7 +212,7 @@ export const getFriends = query({
 
 export const getPendingFriendRequests = query({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
   },
   returns: v.object({
     incoming: v.array(
@@ -220,7 +220,7 @@ export const getPendingFriendRequests = query({
         friendshipId: v.id("friend"),
         createdAt: v.number(),
         requester: v.object({
-          _id: v.id("user"),
+          _id: v.id("profile"),
           _creationTime: v.number(),
           email: v.string(),
           username: v.string(),
@@ -232,7 +232,7 @@ export const getPendingFriendRequests = query({
         friendshipId: v.id("friend"),
         createdAt: v.number(),
         recipient: v.object({
-          _id: v.id("user"),
+          _id: v.id("profile"),
           _creationTime: v.number(),
           email: v.string(),
           username: v.string(),
@@ -283,8 +283,8 @@ export const getPendingFriendRequests = query({
 
 export const checkFriendshipStatus = query({
   args: {
-    userId1: v.id("user"),
-    userId2: v.id("user"),
+    userId1: v.id("profile"),
+    userId2: v.id("profile"),
   },
   returns: v.union(
     v.object({

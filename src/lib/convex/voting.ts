@@ -7,7 +7,7 @@ import { internal } from "./_generated/api";
  */
 export const awardStar = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     submissionId: v.id("submission"),
   },
   returns: v.object({
@@ -114,7 +114,7 @@ export const awardStar = mutation({
  */
 export const removeStar = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     submissionId: v.id("submission"),
   },
   returns: v.object({
@@ -195,7 +195,7 @@ export const removeStar = mutation({
  * Get voting state for current user in a stage
  */
 export const getMyVotingState = query({
-  args: { stageId: v.id("stage"), userId: v.id("user") },
+  args: { stageId: v.id("stage"), userId: v.id("profile") },
   returns: v.object({
     starsRemaining: v.number(),
     votedSubmissions: v.array(v.id("submission")),
@@ -246,7 +246,7 @@ export const getStageVotingSummary = query({
     submissionResults: v.array(
       v.object({
         submissionId: v.id("submission"),
-        userId: v.id("user"),
+        userId: v.id("profile"),
         username: v.string(),
         spotifyUrl: v.string(),
         submissionOrder: v.number(),

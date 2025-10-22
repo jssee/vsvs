@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 
 // Public mutation to manually trigger playlist generation (creator-only)
 export const requestGenerateStagePlaylist = mutation({
-  args: { userId: v.id("user"), stageId: v.id("stage") },
+  args: { userId: v.id("profile"), stageId: v.id("stage") },
   returns: v.object({ success: v.boolean(), message: v.string() }),
   handler: async (ctx, args) => {
     const stage = await ctx.db.get(args.stageId);
@@ -37,7 +37,7 @@ export const getStageForPlaylist = internalQuery({
       stageNumber: v.number(),
       vibe: v.string(),
       battleName: v.string(),
-      battleCreatorId: v.id("user"),
+      battleCreatorId: v.id("profile"),
       submissions: v.array(
         v.object({
           spotifyUrl: v.string(),

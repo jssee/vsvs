@@ -44,7 +44,7 @@ export const load: PageServerLoad = async (event) => {
  */
 async function respondToInvitation(
   client: ConvexHttpClient,
-  userId: Id<"user">,
+  userId: Id<"profile">,
   invitationId: Id<"invitation">,
   response: "accepted" | "declined",
 ) {

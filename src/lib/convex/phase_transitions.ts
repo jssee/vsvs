@@ -168,7 +168,7 @@ export const calculateStageWinner = internalMutation({
       .collect();
 
     const userTotals = new Map<
-      Id<"user">,
+      Id<"profile">,
       { totalStars: number; submissionIds: string[] }
     >();
     for (const sub of submissions) {

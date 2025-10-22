@@ -44,7 +44,7 @@ export const load: PageServerLoad = async (event) => {
  */
 async function sendBattleInvitation(
   client: ConvexHttpClient,
-  userId: Id<"user">,
+  userId: Id<"profile">,
   battleId: Id<"battle">,
   invitedEmail: string,
 ) {

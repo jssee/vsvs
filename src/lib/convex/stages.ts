@@ -7,7 +7,7 @@ import { v } from "convex/values";
  */
 export const addStage = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     battleId: v.id("battle"),
     vibe: v.string(),
     description: v.optional(v.string()),
@@ -101,7 +101,7 @@ export const addStage = mutation({
  */
 export const updateStage = mutation({
   args: {
-    userId: v.id("user"),
+    userId: v.id("profile"),
     stageId: v.id("stage"),
     vibe: v.optional(v.string()),
     description: v.optional(v.string()),

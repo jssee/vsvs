@@ -36,7 +36,7 @@ export const syncCurrentUser = mutation({
     }
 
     const existingUser = await ctx.db
-      .query("user")
+      .query("profile")
       .withIndex("by_email", (q) => q.eq("email", authUser.email))
       .unique();
 
@@ -62,7 +62,7 @@ export const syncCurrentUser = mutation({
     const username = sanitizedUsername;
 
     const usernameConflict = await ctx.db
-      .query("user")
+      .query("profile")
       .withIndex("by_username", (q) => q.eq("username", username))
       .unique();
 
@@ -70,14 +70,14 @@ export const syncCurrentUser = mutation({
       throw new UsernameAlreadyTakenError(username);
     }
 
-    const newUserId = await ctx.db.insert("user", {
+    const newUserId = await ctx.db.insert("profile", {
       email: authUser.email,
       username: username,
     });
 
     const newUser = await ctx.db.get(newUserId);
     if (!newUser) {
-      throw new Error("Failed to create user");
+      throw new Error("Failed to create profile");
     }
 
     return newUser;
@@ -94,7 +94,7 @@ export const getCurrentUser = query({
     }
 
     const appUser = await ctx.db
-      .query("user")
+      .query("profile")
       .withIndex("by_email", (q) => q.eq("email", authUser.email))
       .unique();
 
@@ -102,7 +102,7 @@ export const getCurrentUser = query({
       return null;
     }
 
-    // Return app user
+    // Return app profile
     return appUser;
   },
 });
