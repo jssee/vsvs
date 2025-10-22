@@ -2,10 +2,15 @@
   import { Field, Control, Label, Description, FieldErrors } from "formsnap";
   import { superForm } from "sveltekit-superforms";
   import type { PageProps } from "./$types";
+  import { onMount } from "svelte";
 
   let { data }: PageProps = $props();
   const form = superForm(data.form);
   let { form: formData, enhance, message, allErrors } = form;
+  let tzOffset = 0;
+  onMount(() => {
+    tzOffset = new Date().getTimezoneOffset();
+  });
 </script>
 
 <a href={`/battles/${data.battle._id}`} class="text-sm text-blue-700 underline"
@@ -36,6 +41,7 @@
     action="?/createStage"
     class="w-full space-y-2 p-4 md:w-96 lg:p-0"
   >
+    <input type="hidden" name="tzOffset" bind:value={tzOffset} />
     <div>
       <Field {form} name="vibe">
         <Control>

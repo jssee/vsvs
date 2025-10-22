@@ -33,3 +33,34 @@ export function formatDuration(milliseconds: number): string {
 
   return parts.join(" ");
 }
+
+/**
+ * Convert a HTML datetime-local value and a timezone offset to UTC epoch ms.
+ *
+ * - `local` should be in the form `YYYY-MM-DDTHH:mm` or `YYYY-MM-DDTHH:mm:ss`.
+ * - `tzOffsetMinutes` is the value from `Date#getTimezoneOffset()` for the user's locale
+ *   at the time the local datetime was chosen. It represents minutes to add to local time
+ *   to obtain UTC.
+ *
+ * Returns NaN for invalid input.
+ */
+export function parseLocalDateTimeToUtcMs(
+  local: string,
+  tzOffsetMinutes: number,
+): number {
+  const match = local.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/,
+  );
+  if (!match || !Number.isFinite(tzOffsetMinutes)) return NaN;
+  const [_, y, m, d, hh, mm, ss] = match;
+
+  const utcNaive = Date.UTC(
+    Number(y),
+    Number(m) - 1,
+    Number(d),
+    Number(hh),
+    Number(mm),
+    ss ? Number(ss) : 0,
+  );
+  return utcNaive + tzOffsetMinutes * 60_000;
+}

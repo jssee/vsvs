@@ -8,12 +8,17 @@ import { requireAuth } from "$lib/server/auth-helpers";
 import { api } from "$lib/convex/_generated/api";
 import type { Actions, PageServerLoad } from "./$types";
 import type { Id } from "$lib/convex/_generated/dataModel";
+import { parseLocalDateTimeToUtcMs } from "$lib/time";
 
 const formSchema = z.object({
   vibe: z.string().min(1, "Vibe is required").max(100, "Vibe too long"),
   description: z.string().optional(),
   submissionLocal: z.string().min(1, "Submission deadline required"),
   votingLocal: z.string().min(1, "Voting deadline required"),
+  // Minutes to add to local time to get UTC (Date.getTimezoneOffset())
+  tzOffset: z.coerce
+    .number()
+    .refine((n) => Number.isFinite(n), "Invalid timezone offset"),
 });
 
 export const load: PageServerLoad = async (event) => {
@@ -40,8 +45,14 @@ export const actions = {
     const form = await superValidate(request, zod4(formSchema));
     if (!form.valid) return fail(400, { form });
 
-    const submissionDeadline = new Date(form.data.submissionLocal).getTime();
-    const votingDeadline = new Date(form.data.votingLocal).getTime();
+    const submissionDeadline = parseLocalDateTimeToUtcMs(
+      form.data.submissionLocal,
+      form.data.tzOffset,
+    );
+    const votingDeadline = parseLocalDateTimeToUtcMs(
+      form.data.votingLocal,
+      form.data.tzOffset,
+    );
 
     if (
       !Number.isFinite(submissionDeadline) ||
