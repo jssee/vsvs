@@ -70,13 +70,13 @@ export const load: PageServerLoad = async (event) => {
   const battleId = params.id as Id<"battle">;
   const stageId = params.stageId as Id<"stage">;
 
-  const battle = await convexClient.query(api.battles.getBattle, {
+  const battle = await convexClient.query(api.battle.getBattle, {
     battleId,
     userId: user?._id,
   });
   if (!battle) throw error(404, "Battle not found");
 
-  const stages = await convexClient.query(api.stages.getBattleStages, {
+  const stages = await convexClient.query(api.stage.getBattleStages, {
     battleId,
   });
   const stage = stages.find((s) => s._id === stageId);
@@ -103,7 +103,7 @@ export const load: PageServerLoad = async (event) => {
   }
 
   const stageSubmissions = await convexClient.query(
-    api.submissions.getStageSubmissions,
+    api.submission.getStageSubmissions,
     {
       stageId,
       currentUserId: user?._id,
@@ -112,7 +112,7 @@ export const load: PageServerLoad = async (event) => {
 
   type MySubmissionsType = Awaited<
     ReturnType<
-      typeof convexClient.query<typeof api.submissions.getMyStageSubmissions>
+      typeof convexClient.query<typeof api.submission.getMyStageSubmissions>
     >
   >;
   let mySubmissions: MySubmissionsType = [];
@@ -124,7 +124,7 @@ export const load: PageServerLoad = async (event) => {
 
   if (user) {
     mySubmissions = await convexClient.query(
-      api.submissions.getMyStageSubmissions,
+      api.submission.getMyStageSubmissions,
       {
         stageId,
         userId: user._id,
@@ -162,7 +162,7 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await client.mutation(api.submissions.submitSong, {
+        await client.mutation(api.submission.submitSong, {
           userId: user._id,
           stageId: form.data.stageId as Id<"stage">,
           spotifyUrl: form.data.spotifyUrl,
@@ -183,7 +183,7 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await client.mutation(api.submissions.removeSubmission, {
+        await client.mutation(api.submission.removeSubmission, {
           userId: user._id,
           submissionId: form.data.submissionId as Id<"submission">,
         }),
@@ -203,7 +203,7 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await client.mutation(api.submissions.updateSubmissionUrl, {
+        await client.mutation(api.submission.updateSubmissionUrl, {
           userId: user._id,
           submissionId: form.data.submissionId as Id<"submission">,
           spotifyUrl: form.data.spotifyUrl,

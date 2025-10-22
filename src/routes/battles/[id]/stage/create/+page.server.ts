@@ -20,7 +20,7 @@ export const load: PageServerLoad = async (event) => {
   const { params } = event;
   const { client, user } = await requireAuth(event);
 
-  const battle = await client.query(api.battles.getBattle, {
+  const battle = await client.query(api.battle.getBattle, {
     battleId: params.id as Id<"battle">,
     userId: user._id,
   });
@@ -57,7 +57,7 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await client.mutation(api.stages.addStage, {
+        await client.mutation(api.stage.addStage, {
           userId: user._id,
           battleId: params.id as Id<"battle">,
           vibe: form.data.vibe,

@@ -35,7 +35,7 @@ export const actions = {
 
     const result = Result.try(
       async () =>
-        await client.mutation(api.battles.createBattle, {
+        await client.mutation(api.battle.createBattle, {
           userId: user._id,
           name,
           visibility,

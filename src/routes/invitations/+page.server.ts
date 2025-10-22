@@ -15,14 +15,14 @@ import {
 export const load: PageServerLoad = async (event) => {
   const { client, user } = await requireAuth(event);
 
-  const invitations = await client.query(api.invitations.getMyInvitations, {
+  const invitations = await client.query(api.invitation.getMyInvitations, {
     userId: user._id,
   });
 
   // Fetch battle names for each invitation
   const invitationsWithBattles = await Promise.all(
     invitations.map(async (inv) => {
-      const battle = await client.query(api.battles.getBattle, {
+      const battle = await client.query(api.battle.getBattle, {
         battleId: inv.battleId,
         userId: user._id,
       });
@@ -49,7 +49,7 @@ async function respondToInvitation(
   response: "accepted" | "declined",
 ) {
   const apiResponse = await client.mutation(
-    api.invitations.respondToInvitation,
+    api.invitation.respondToInvitation,
     {
       userId,
       invitationId,

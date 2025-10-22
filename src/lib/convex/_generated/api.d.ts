@@ -9,18 +9,18 @@
  */
 
 import type * as auth from "../auth.js";
-import type * as battles from "../battles.js";
+import type * as battle from "../battle.js";
 import type * as crons from "../crons.js";
 import type * as friend from "../friend.js";
 import type * as http from "../http.js";
-import type * as invitations from "../invitations.js";
+import type * as invitation from "../invitation.js";
 import type * as phase_transitions from "../phase_transitions.js";
-import type * as players from "../players.js";
+import type * as player from "../player.js";
 import type * as profile from "../profile.js";
 import type * as spotify from "../spotify.js";
 import type * as spotify_actions from "../spotify_actions.js";
-import type * as stages from "../stages.js";
-import type * as submissions from "../submissions.js";
+import type * as stage from "../stage.js";
+import type * as submission from "../submission.js";
 import type * as voting from "../voting.js";
 
 import type {
@@ -39,18 +39,18 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
-  battles: typeof battles;
+  battle: typeof battle;
   crons: typeof crons;
   friend: typeof friend;
   http: typeof http;
-  invitations: typeof invitations;
+  invitation: typeof invitation;
   phase_transitions: typeof phase_transitions;
-  players: typeof players;
+  player: typeof player;
   profile: typeof profile;
   spotify: typeof spotify;
   spotify_actions: typeof spotify_actions;
-  stages: typeof stages;
-  submissions: typeof submissions;
+  stage: typeof stage;
+  submission: typeof submission;
   voting: typeof voting;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

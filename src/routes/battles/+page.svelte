@@ -6,7 +6,7 @@
   const { data, form }: PageProps = $props();
 
   const query = useQuery(
-    api.battles.getMyBattles,
+    api.battle.getMyBattles,
     { userId: data.user._id },
     { initialData: data.battles },
   );

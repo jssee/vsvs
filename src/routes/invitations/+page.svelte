@@ -6,7 +6,7 @@
   const { data, form }: PageProps = $props();
 
   const query = useQuery(
-    api.invitations.getMyInvitations,
+    api.invitation.getMyInvitations,
     { userId: data.user._id },
     { initialData: data.invitations },
   );

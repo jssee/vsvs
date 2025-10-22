@@ -14,7 +14,7 @@ import { requireAuth } from "$lib/server/auth-helpers";
 export const load: PageServerLoad = async (event) => {
   const { client, user } = await requireAuth(event);
 
-  const battles = await client.query(api.battles.getMyBattles, {
+  const battles = await client.query(api.battle.getMyBattles, {
     userId: user._id,
   });
 
@@ -32,7 +32,7 @@ async function joinBattleByInviteCode(
   inviteCode: string,
   userId: Id<"profile">,
 ) {
-  const response = await client.mutation(api.players.joinBattleByCode, {
+  const response = await client.mutation(api.player.joinBattleByCode, {
     inviteCode,
     userId,
   });

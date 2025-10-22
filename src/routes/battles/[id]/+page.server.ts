@@ -22,13 +22,13 @@ export const load: PageServerLoad = async (event) => {
     client || (await import("$lib/convex-client")).getConvexClient();
 
   const battleId = params.id as Id<"battle">;
-  const battle = await convexClient.query(api.battles.getBattle, {
+  const battle = await convexClient.query(api.battle.getBattle, {
     battleId,
     userId: user?._id,
   });
   if (!battle) throw error(404, "Battle not found");
 
-  const stages = await convexClient.query(api.stages.getBattleStages, {
+  const stages = await convexClient.query(api.stage.getBattleStages, {
     battleId,
   });
 
@@ -53,7 +53,7 @@ async function sendBattleInvitation(
     return Result.error(new InvalidEmailError());
   }
 
-  const response = await client.mutation(api.invitations.sendInvitation, {
+  const response = await client.mutation(api.invitation.sendInvitation, {
     userId,
     battleId,
     invitedEmail,
