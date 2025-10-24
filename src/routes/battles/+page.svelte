@@ -2,6 +2,11 @@
   import { useQuery } from "convex-svelte";
   import { api } from "$lib/convex/_generated/api";
   import type { PageProps } from "./$types";
+  import { Button } from "$lib/components/ui/button";
+  import { Field } from "$lib/components/ui/field";
+  import { Input } from "$lib/components/ui/input";
+  import { Card, CardContent } from "$lib/components/ui/card";
+  import * as Item from "$lib/components/ui/item";
 
   const { data, form }: PageProps = $props();
 
@@ -25,32 +30,31 @@
   >
 </div>
 
-<section class="mb-6 rounded border p-4">
-  <h2 class="mb-3 font-medium">Join a Battle</h2>
-  <form method="post" action="?/joinByCode" class="flex gap-2">
-    {#if form?.message}
-      <p class="w-full text-sm text-red-600">{form.message}</p>
-    {/if}
-    <input
-      type="text"
-      name="inviteCode"
-      bind:value={inviteCode}
-      placeholder="Enter invite code (e.g., ABC123)"
-      class="flex-1 rounded border px-3 py-2 uppercase"
-      maxlength="6"
-      required
-    />
-    <button
-      type="submit"
-      class="rounded bg-black px-4 py-2 text-white hover:bg-gray-800"
+<section class="mx-auto max-w-screen-lg">
+  <Card>
+    <CardContent
+      ><h2 class="mb-3 font-medium">Join a Battle</h2>
+      <form method="post" action="?/joinByCode" class="flex gap-2">
+        {#if form?.message}
+          <p class="w-full text-sm text-red-600">{form.message}</p>
+        {/if}
+        <Field>
+          <Input
+            type="text"
+            name="inviteCode"
+            bind:value={inviteCode}
+            placeholder="Enter invite code (e.g., ABC123)"
+            class="flex-1 rounded border px-3 py-2 uppercase"
+            required
+          />
+          <Button type="submit">Join</Button>
+        </Field>
+      </form></CardContent
     >
-      Join
-    </button>
-  </form>
+  </Card>
 </section>
 
-<section class="rounded border p-4">
-  <h2 class="mb-3 font-medium">My Battles</h2>
+<section class="mx-auto max-w-screen-lg">
   {#if query.isLoading}
     <p class="text-sm text-gray-600">Loading...</p>
   {:else if query.error != null}
@@ -58,20 +62,27 @@
   {:else if query.data.length === 0}
     <p class="text-sm text-gray-600">You have no battles.</p>
   {:else}
-    <ul class="space-y-2">
+    <Item.Group>
       {#each query.data as battle (battle._id)}
-        <li class="flex items-center justify-between rounded border p-3">
-          <a
-            class="font-medium hover:underline"
-            href={`/battles/${battle._id}`}
+        <Item.Root>
+          <Item.Header>
+            <a
+              class="font-medium hover:underline"
+              href={`/battles/${battle._id}`}
+            >
+              {battle.name}
+            </a>
+          </Item.Header>
+          <Item.Content
+            ><span class="text-sm text-gray-600">
+              {battle.playerCount}/{battle.maxPlayers} · {battle.status}
+            </span></Item.Content
           >
-            {battle.name}
-          </a>
-          <span class="text-sm text-gray-600">
-            {battle.playerCount}/{battle.maxPlayers} · {battle.status}
-          </span>
-        </li>
+          <Item.Actions>
+            <Button variant="outline">Go</Button>
+          </Item.Actions>
+        </Item.Root>
       {/each}
-    </ul>
+    </Item.Group>
   {/if}
 </section>
