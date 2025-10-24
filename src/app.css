@@ -1,3 +1,4 @@
+@import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "tailwindcss";
 
 @import "tw-animate-css";
@@ -74,6 +75,7 @@
 }
 
 @theme inline {
+  --font-sans: "Plus Jakarta Sans Variable", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
