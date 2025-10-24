@@ -9,7 +9,7 @@ import { createAuth } from "$lib/convex/auth";
 
 const signUpSchema = z.object({
   email: z.email("Enter a valid email address").trim(),
-  _password: z.string().min(8, "Password must be at least 8 characters long"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
   username: z
     .string()
     .trim()
@@ -23,7 +23,7 @@ const signUpSchema = z.object({
 
 const signInSchema = z.object({
   email: z.email("Enter a valid email address").trim(),
-  _password: z.string().min(8, "Password must be at least 8 characters long"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 export const signUp = form(signUpSchema, async (data, invalid) => {
@@ -38,7 +38,7 @@ export const signUp = form(signUpSchema, async (data, invalid) => {
         },
         body: JSON.stringify({
           email: data.email,
-          password: data._password,
+          password: data.password,
           name: data.username,
         }),
       });
@@ -111,7 +111,7 @@ export const signIn = form(signInSchema, async (data, invalid) => {
         },
         body: JSON.stringify({
           email: data.email,
-          password: data._password,
+          password: data.password,
         }),
       });
 
@@ -134,7 +134,7 @@ export const signIn = form(signInSchema, async (data, invalid) => {
     if (errorMessage.toLowerCase().includes("email")) {
       invalid(invalid.email(errorMessage));
     } else if (errorMessage.toLowerCase().includes("password")) {
-      invalid(invalid._password(errorMessage));
+      invalid(invalid.password(errorMessage));
     } else {
       invalid(invalid.email(errorMessage));
     }

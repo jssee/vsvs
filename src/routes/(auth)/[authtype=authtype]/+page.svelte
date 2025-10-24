@@ -71,11 +71,11 @@
           <input
             id="password"
             placeholder="••••••••"
-            {...signUp.fields._password.as("password")}
+            {...signUp.fields.password.as("password")}
             autocomplete="new-password"
             required
           />
-          {#each signUp.fields._password.issues() || [] as issue, i (i)}
+          {#each signUp.fields.password.issues() || [] as issue, i (i)}
             <span class="text-xs text-red-500">{issue.message}</span>
           {/each}
         </div>
@@ -128,11 +128,11 @@
           <input
             id="password"
             placeholder="••••••••"
-            {...signIn.fields._password.as("password")}
+            {...signIn.fields.password.as("password")}
             autocomplete="current-password"
             required
           />
-          {#each signIn.fields._password.issues() || [] as issue, i (i)}
+          {#each signIn.fields.password.issues() || [] as issue, i (i)}
             <span class="text-xs text-red-500">{issue.message}</span>
           {/each}
         </div>
